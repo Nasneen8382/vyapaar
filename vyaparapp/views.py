@@ -20,6 +20,8 @@ from num2words import num2words
 from django.template.loader import get_template
 from xhtml2pdf import pisa
 
+import pandas as pd
+
 
 # Create your views here.
 def home(request):
@@ -159,11 +161,10 @@ def company_reg(request):
     
 def company_reg2(request):
   terms=payment_terms.objects.all()
-  
   return render(request,'company/register2.html',{'terms':terms})  
+
 def add_company(request):
   
-  print(id)
   if request.method == 'POST':
     email=request.POST['email']
     user=User.objects.get(email=email)
@@ -191,10 +192,6 @@ def add_company(request):
     end= date.today() + timedelta(days=days)
     c.End_date=end
 
-
-    
-    
-
     code=get_random_string(length=6)
     if company.objects.filter(Company_code = code).exists():
        code2=get_random_string(length=6)
@@ -204,6 +201,11 @@ def add_company(request):
 
    
     c.save()
+
+    staff = staff_details.objects.get(email=email,position='company',company=c)
+    staff.first_name = request.POST['cname']
+    staff.last_name = ''
+    staff.save()
     # messages.success(request, 'Welcome'+ ' ' +  user.first_name +' '+user.last_name + ' ')
 
     return redirect('Allmodule',user.id)  
@@ -233,17 +235,14 @@ def staff_registraction(request):
 
     if staff_details.objects.filter(user_name=un).exists():
       messages.info(request, 'Sorry, Username already exists')
-      print("1")
       return redirect('staff_register')
     elif staff_details.objects.filter(email=email).exists():
       messages.info(request, 'Sorry, Email already exists')
-      print("2")
       return redirect('staff_register')
     else:
       
       staff=staff_details(first_name=fn,last_name=ln,email=email,user_name=un,password=pas,contact=ph,img=img,company=com)
       staff.save()
-      print("success")
       return redirect('log_page')
 
   else:
@@ -314,99 +313,13 @@ def add_payment_terms(request):
 
 
 
-def companyreport(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/companyreport.html',{'company':com,'allmodules':allmodules})  
+ 
 
 
 
-def editcompanyprofile(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  terms=payment_terms.objects.all()
-  return render(request,'company/editcompanyprofile.html',{'company':com,'allmodules':allmodules,'terms':terms})
-
-def editcompanyprofile_action(request):
-  com =  company.objects.get(user = request.user)
-  if request.method == 'POST':
-    com.company_name = request.POST['cname']
-    com.user.email = request.POST['email']
-    com.contact = request.POST['ph']
-    com.address = request.POST['address']
-    com.city = request.POST['city']
-    com.state = request.POST['state']
-    com.country = request.POST['country']
-    com.pincode = request.POST['pincode']
-
-    t = request.POST['select']
-    terms = payment_terms.objects.get(id=t)
-    com.dateperiod = terms
-    com.start_date=date.today()
-    days=int(terms.days)
-
-    end= date.today() + timedelta(days=days)
-    com.End_date=end
-
-    old=com.profile_pic
-    new=request.FILES.get('image')
-    if old!=None and new==None:
-      com.profile_pic=old
-    else:
-      com.profile_pic=new
-    
-    com.save() 
-    com.user.save() 
-    return redirect('Companyprofile') 
 
 
 
-  return redirect('Companyprofile')
-
-def editmodule(request):
-  com =  company.objects.get(user = request.user)
-  allmodules= modules_list.objects.get(company=com.id,status='New')
-  return render(request,'company/editmodule.html',{'company':com,'allmodules':allmodules})
-
-def editmodule_action(request):
-  if request.method == 'POST':
-    com = company.objects.get(user = request.user)
-    # if modules_list.objects.filter(company=com.id,status='Old').exists():
-    #   old=modules_list.objects.filter(company=com.id,status='Old')
-    #   old.delete()
-
-    # old_data=modules_list.objects.get(company=com.id,status='New')  
-    # old_data.status='Old'
-    # old_data.save()
-
-
-
-    c1=request.POST.get('c1')
-    c2=request.POST.get('c2')
-    c3=request.POST.get('c3')
-    c4=request.POST.get('c4')
-    c5=request.POST.get('c5')
-    c6=request.POST.get('c6')
-    c7=request.POST.get('c7')
-    c8=request.POST.get('c8')
-    c9=request.POST.get('c9')
-    c10=request.POST.get('c10')
-    c11=request.POST.get('c11')
-    c12=request.POST.get('c12')
-    c13=request.POST.get('c13')
-    c14=request.POST.get('c14')
-    
-    data=modules_list(company=com,sales_invoice = c1,
-                      Estimate=c2,Payment_in=c3,sales_order=c4,
-                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
-                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
-                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14,status='Pending')
-    data.save()
-    data1=modules_list.objects.filter(company=com.id,status='Pending').update(update_action=1)
-    return redirect('Companyprofile')
-    
-    
-  return redirect('Companyprofile')
 
 def admin_notification(request):
   data= modules_list.objects.filter(update_action=1,status='Pending')
@@ -431,45 +344,7 @@ def module_updation_ok(request,mid):
   data1=modules_list.objects.filter(company=mid).update(update_action=0)
   return redirect('admin_notification')
 
-def staff_profile(request,sid):
-  staff =  staff_details.objects.get(id=sid)
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  context = {
-              'staff' : staff,
-              'allmodules':allmodules
 
-          }
-  return render(request,'staff/staff_profile.html',context)
-
-def editstaff_profile(request,sid):
-  staff =  staff_details.objects.get(id=sid)
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  context = {
-              'staff' : staff,
-              'allmodules':allmodules
-
-          }
-  return render(request,'staff/editstaff_profile.html',context)
-
-def editstaff_profile_action(request,sid):
-  if request.method == 'POST':
-    staff =  staff_details.objects.get(id=sid)
-    staff.first_name = request.POST['fname']
-    staff.last_name = request.POST['lname']
-    staff.user_name = request.POST['uname']
-    staff.email = request.POST['email']
-    staff.contact = request.POST['ph']
-    old=staff.img
-    new=request.FILES.get('image')
-    if old!=None and new==None:
-      staff.img=old
-    else:
-      staff.img=new
-
-    staff.save()  
-
-    return redirect ('staff_profile',staff.id)
-  return redirect ('staff_profile',staff.id)
 
 
 
@@ -925,61 +800,13 @@ def add_parties(request):
   return render(request, 'company/add_parties.html')
 
 
-def save_parties(request):
-    if request.method == 'POST':
-        Company = company.objects.get(user=request.user)
-        user_id = request.user.id
-        
-        party_name = request.POST['partyname']
-        gst_no = request.POST['gstno']
-        contact = request.POST['contact']
-        gst_type = request.POST['gst']
-        state = request.POST['state']
-        address = request.POST['address']
-        email = request.POST['email']
-        openingbalance = request.POST.get('balance', '')
-        payment = request.POST.get('paymentType', '')
-        creditlimit = request.POST.get('creditlimit', '')
-        current_date = request.POST['currentdate']
-        End_date = request.POST.get('enddate', None)
-        additionalfield1 = request.POST['additionalfield1']
-        additionalfield2 = request.POST['additionalfield2']
-        additionalfield3 = request.POST['additionalfield3']
-        user=User.objects.get(id=user_id)
-        comp=Company
-        if (
-          not party_name
-          
-      ):
-          return render(request, 'add_parties.html')
-
-        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
-                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=user,company=comp)
-        part.save() 
-
-        if 'save_and_new' in request.POST:
-            
-            return render(request, 'company/add_parties.html')
-        else:
-          
-            return redirect('view_parties')
-
-    return render(request, 'company/add_parties.html')  
 
 
-def view_parties(request):
-  Company = company.objects.get(user=request.user.id)
-  user_id = request.user.id
-  Party=party.objects.filter(company=Company.id)
-  return render(request, 'company/view_parties.html',{'Company':Company,'user_id':user_id,'Party':Party})
 
 
-def view_party(request,id):
-  Company = company.objects.get(user=request.user)
-  user_id = request.user.id
-  getparty=party.objects.get(id=id)
-  Party=party.objects.filter(company=Company.id)
-  return render(request, 'company/view_party.html',{'Company':Company,'user_id':user_id,'Party':Party,'getparty':getparty})
+
+
+
 
 def edit_party(request,id):
   Company = company.objects.get(user=request.user)
@@ -2203,15 +2030,16 @@ def bank_transaction_statement(request,bank_id):
 def view_purchasebill(request):
   sid = request.session.get('staff_id')
   staff =  staff_details.objects.get(id=sid)
-  allmodules= modules_list.objects.get(company=staff.company,status='New')
-  pbill = PurchaseBill.objects.filter(company=staff.company)
+  cmp = company.objects.get(id=staff.company.id)
+  allmodules= modules_list.objects.get(company=cmp,status='New')
+  pbill = PurchaseBill.objects.filter(company=cmp)
 
   if not pbill:
     context = {'staff':staff, 'allmodules':allmodules}
-    return render(request,'staff/purchasebillempty.html',context)
+    return render(request,'company/purchasebillempty.html',context)
   
   context = {'staff':staff,'allmodules':allmodules,'pbill':pbill}
-  return render(request,'staff/purchasebilllist.html',context)
+  return render(request,'company/purchasebilllist.html',context)
 
 
 def add_purchasebill(request):
@@ -2224,7 +2052,7 @@ def add_purchasebill(request):
   cust = party.objects.filter(company=cmp,user=cmp.user)
   bank = BankModel.objects.filter(company=cmp,user=cmp.user)
   allmodules= modules_list.objects.get(company=staff.company,status='New')
-  last_bill = PurchaseBill.objects.last()
+  last_bill = PurchaseBill.objects.filter(company=cmp).last()
 
   if last_bill:
     bill_no = last_bill.tot_bill_no + 1 
@@ -2235,7 +2063,7 @@ def add_purchasebill(request):
   item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company)
 
   context = {'staff':staff, 'allmodules':allmodules, 'cust':cust, 'cmp':cmp,'bill_no':bill_no, 'tod':tod, 'item':item, 'item_units':item_units,'bank':bank}
-  return render(request,'staff/purchasebilladd.html',context)
+  return render(request,'company/purchasebilladd.html',context)
 
 
 def create_purchasebill(request):
@@ -2245,6 +2073,7 @@ def create_purchasebill(request):
     cmp = company.objects.get(id=staff.company.id)    
     part = party.objects.get(id=request.POST.get('customername'))
     pbill = PurchaseBill(party=part, 
+                          billno=request.POST.get('bill_no'),
                           billdate=request.POST.get('billdate'),
                           supplyplace =request.POST.get('placosupply'),
                           pay_method=request.POST.get("method"),
@@ -2270,7 +2099,7 @@ def create_purchasebill(request):
     else:
       tax =  tuple(request.POST.getlist("tax2[]"))
     total =  tuple(request.POST.getlist("total[]"))
-    billno = PurchaseBill.objects.get(billno =pbill.billno)
+    billno = PurchaseBill.objects.get(billno =pbill.billno,company=cmp)
 
     if len(product)==len(qty)==len(tax)==len(discount)==len(total):
         mapped=zip(product,qty,tax,discount,total)
@@ -2279,13 +2108,12 @@ def create_purchasebill(request):
           itm = ItemModel.objects.get(id=ele[0])
           PurchaseBillItem.objects.create(product = itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],purchasebill=billno,company=cmp)
 
-    PurchaseBill.objects.all().update(tot_bill_no=F('tot_bill_no') + 1)
+    PurchaseBill.objects.filter(company=cmp).update(tot_bill_no=F('tot_bill_no') + 1)
     
-    last_bill = PurchaseBill.objects.last()
-    last_bill.tot_bill_no = last_bill.billno
-    last_bill.save()
+    pbill.tot_bill_no = pbill.billno
+    pbill.save()
 
-    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,staff=staff,company=cmp,action='Created')
+    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,company=cmp,staff=staff,action='Created')
 
     if 'Next' in request.POST:
       return redirect('add_purchasebill')
@@ -2298,6 +2126,9 @@ def create_purchasebill(request):
 
 
 def edit_purchasebill(request,id):
+  toda = date.today()
+  tod = toda.strftime("%Y-%m-%d")
+  
   sid = request.session.get('staff_id')
   staff =  staff_details.objects.get(id=sid)
   cmp = company.objects.get(id=staff.company.id)
@@ -2306,12 +2137,18 @@ def edit_purchasebill(request,id):
   item_units = UnitModel.objects.filter(user=cmp.user,company=staff.company.id)
   bank = BankModel.objects.filter(company=cmp,user=cmp.user)
   allmodules= modules_list.objects.get(company=staff.company,status='New')
-  pbill = PurchaseBill.objects.get(billno=id)
-  billprd = PurchaseBillItem.objects.filter(purchasebill=id)
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  billprd = PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp)
+
+  if pbill.pay_method != 'Cash' and pbill.pay_method != 'Cheque' and pbill.pay_method != 'UPI':
+    bankno = BankModel.objects.get(id= pbill.pay_method,company=cmp,user=cmp.user)
+  else:
+    bankno = 0
 
   bdate = pbill.billdate.strftime("%Y-%m-%d")
-  context = {'staff':staff, 'allmodules':allmodules, 'pbill':pbill, 'billprd':billprd, 'cust':cust, 'item':item, 'item_units':item_units, 'bdate':bdate,'bank':bank}
-  return render(request,'staff/purchasebilledit.html',context)
+  context = {'staff':staff, 'allmodules':allmodules, 'pbill':pbill, 'billprd':billprd,'tod':tod,
+             'cust':cust, 'item':item, 'item_units':item_units, 'bdate':bdate,'bank':bank, 'bankno':bankno}
+  return render(request,'company/purchasebilledit.html',context)
 
 
 def update_purchasebill(request,id):
@@ -2320,7 +2157,7 @@ def update_purchasebill(request,id):
     staff = staff_details.objects.get(id=sid)
     cmp = company.objects.get(id=staff.company.id)  
     part = party.objects.get(id=request.POST.get('customername'))
-    pbill = PurchaseBill.objects.get(billno=id,company=cmp,staff=staff)
+    pbill = PurchaseBill.objects.get(id=id,company=cmp)
     pbill.party = part
     pbill.billdate = request.POST.get('billdate')
     pbill.supplyplace  = request.POST.get('placosupply')
@@ -2347,36 +2184,16 @@ def update_purchasebill(request,id):
       tax = tuple(request.POST.getlist("tax2[]"))
     total = tuple(request.POST.getlist("total[]"))
     discount = tuple(request.POST.getlist("discount[]"))
-    itemid = request.POST.getlist("id[]")
-    item_ids = [int(id) for id in itemid]
 
-    pur= PurchaseBill.objects.get(billno =pbill.billno)
-    pur_item = PurchaseBillItem.objects.filter(purchasebill=pur)
-    object_ids = [obj.id for obj in pur_item]
-    ids_to_delete = [obj_id for obj_id in object_ids if obj_id not in item_ids]
-    PurchaseBillItem.objects.filter(id__in=ids_to_delete).delete()
-    count = PurchaseBillItem.objects.filter(purchasebill=pur).count()
-    if len(total)==len(discount)==len(qty)==len(tax)==len(total):
-      try:
-          mapped=zip(product,qty,tax,discount,total,item_ids)
-          mapped=list(mapped)
-          for ele in mapped:
-              if int(len(product))>int(count):
-                  if ele[5] == 0:
-                      itm = ItemModel.objects.get(id=ele[0])
-                      PurchaseBillItem.objects.create(product =itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],purchasebill=pur,company=cmp)
+    PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp).delete()
+    if len(total)==len(discount)==len(qty)==len(tax):
+      mapped=zip(product,qty,tax,discount,total)
+      mapped=list(mapped)
+      for ele in mapped:
+        itm = ItemModel.objects.get(id=ele[0])
+        PurchaseBillItem.objects.create(product =itm,qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4],purchasebill=pbill,company=cmp)
 
-                  else:
-                      PurchaseBillItem.objects.filter(id=ele[5],company=cmp).update(product = ele[0],qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4])
-              else:
-                  PurchaseBillItem.objects.filter(id=ele[5],company=cmp).update(product = ele[0],qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4])
-      except:
-              mapped=zip(product,qty,tax,discount,total,item_ids)
-              mapped=list(mapped)
-              for ele in mapped:
-                  PurchaseBillItem.objects.filter(id=ele[5],company=cmp).update(product = ele[0],qty=ele[1], tax=ele[2],discount=ele[3],total=ele[4])
-
-    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,staff=staff,company=cmp,action='Updated')
+    PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,company=cmp,staff=staff,action='Updated')
     return redirect('view_purchasebill')
 
   return redirect('view_purchasebill')
@@ -2384,35 +2201,40 @@ def update_purchasebill(request,id):
 
 def details_purchasebill(request,id):
   sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
   allmodules = modules_list.objects.get(company=staff.company,status='New')
-  pbill = PurchaseBill.objects.get(billno=id)
-  pitm = PurchaseBillItem.objects.filter(purchasebill=pbill)
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  pitm = PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp)
   dis = 0
   for itm in pitm:
     dis += int(itm.discount)
   itm_len = len(pitm)
 
   context={'staff':staff,'allmodules':allmodules,'pbill':pbill,'pitm':pitm,'itm_len':itm_len,'dis':dis}
-  return render(request,'staff/purchasebilldetails.html',context)
+  return render(request,'company/purchasebilldetails.html',context)
 
 
 def history_purchasebill(request,id):
   sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)   
   allmodules= modules_list.objects.get(company=staff.company,status='New')
-  hst= PurchaseBillTransactionHistory.objects.filter(purchasebill=id)
+  pbill = PurchaseBill.objects.get(id=id,company=cmp)
+  hst= PurchaseBillTransactionHistory.objects.filter(purchasebill=pbill,company=cmp)
 
-  context = {'staff':staff,'allmodules':allmodules,'hst':hst,'id':id}
-  return render(request,'staff/purchasebillhistory.html',context)
+  context = {'staff':staff,'allmodules':allmodules,'hst':hst,'pbill':pbill}
+  return render(request,'company/purchasebillhistory.html',context)
 
 
 def delete_purchasebill(request,id):
-  pbill = PurchaseBill.objects.get(billno=id)
-  PurchaseBillItem.objects.get(purchasebill=pbill).delete()
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  pbill = PurchaseBill.objects.get(id=id)
+  PurchaseBillItem.objects.filter(purchasebill=pbill,company=cmp).delete()
   pbill.delete()
   return redirect('view_purchasebill')
-
 
 
 def import_purchase_bill(request):
@@ -2420,7 +2242,7 @@ def import_purchase_bill(request):
     sid = request.session.get('staff_id')
     staff =  staff_details.objects.get(id=sid)
     cmp = company.objects.get(id=staff.company.id)
-    totval = int(PurchaseBill.objects.last().tot_bill_no)
+    totval = int(PurchaseBill.objects.filter(company=cmp).last().tot_bill_no) + 1
 
     excel_bill = request.FILES['billfile']
     excel_b = load_workbook(excel_bill)
@@ -2432,24 +2254,28 @@ def import_purchase_bill(request):
     for row_number1 in range(2, eb.max_row + 1):
       billsheet = [eb.cell(row=row_number1, column=col_num).value for col_num in range(1, eb.max_column + 1)]
       part = party.objects.get(party_name=billsheet[0],email=billsheet[1],company=cmp)
-      PurchaseBill.objects.create(party=part, 
+      PurchaseBill.objects.create(party=part,billno=totval,
                                   billdate=billsheet[2],
                                   supplyplace =billsheet[3],
-                                  tot_bill_no = totval+1,
+                                  tot_bill_no = totval,
                                   company=cmp,staff=staff)
       
       pbill = PurchaseBill.objects.last()
       if billsheet[4] == 'Cheque':
+        pbill.pay_method = 'Cheque'
         pbill.cheque_no = billsheet[5]
       elif billsheet[4] == 'UPI':
+        pbill.pay_method = 'UPI'
         pbill.upi_no = billsheet[5]
       else:
         if billsheet[4] != 'Cash':
           bank = BankModel.objects.get(bank_name=billsheet[4],company=cmp)
           pbill.pay_method = bank
+        else:
+          pbill.pay_method = 'Cash'
       pbill.save()
 
-      PurchaseBill.objects.all().update(tot_bill_no=totval + 1)
+      PurchaseBill.objects.filter(company=cmp).update(tot_bill_no=totval)
       totval += 1
       subtotal = 0
       taxamount=0
@@ -2457,49 +2283,51 @@ def import_purchase_bill(request):
         prdsheet = [ep.cell(row=row_number2, column=col_num).value for col_num in range(1, ep.max_column + 1)]
         if prdsheet[0] == row_number1:
           itm = ItemModel.objects.get(item_name=prdsheet[1],item_hsn=prdsheet[2])
+          total=int(prdsheet[3])*int(itm.item_purchase_price) - int(prdsheet[5])
+          PurchaseBillItem.objects.create(purchasebill=pbill,
+                                company=cmp,
+                                product=itm,
+                                qty=prdsheet[3],
+                                tax=prdsheet[4],
+                                discount=prdsheet[5],
+                                total=total)
+
           temp = prdsheet[4].split('[')
           if billsheet[3] =='State':
             tax=int(temp[0][3:])
           else:
             tax=int(temp[0][4:])
 
-          total=int(prdsheet[3])*int(itm.item_purchase_price) - int(prdsheet[5])
           subtotal += total
           tamount = total *(tax / 100)
-          taxamount += tamount 
-          PurchaseBillItem.objects.create(purchasebill=pbill,
-                                          company=cmp,
-                                          product=itm,
-                                          qty=prdsheet[3],
-                                          tax=prdsheet[4],
-                                          discount=prdsheet[5],
-                                          total=total)
+          taxamount += tamount
                 
-          if billsheet[3]=='State':
-            gst = round((taxamount/2),2)
-            pbill.sgst=gst
-            pbill.cgst=gst
-            pbill.igst=0
+      if billsheet[3]=='State':
+        gst = round((taxamount/2),2)
+        pbill.sgst=gst
+        pbill.cgst=gst
+        pbill.igst=0
 
-          else:
-            gst=round(taxamount,2)
-            pbill.igst=gst
-            pbill.cgst=0
-            pbill.sgst=0
+      else:
+        gst=round(taxamount,2)
+        pbill.igst=gst
+        pbill.cgst=0
+        pbill.sgst=0
 
-          gtotal = subtotal + taxamount + float(billsheet[6])
-          balance = gtotal- float(billsheet[7])
-          gtotal = round(gtotal,2)
-          balance = round(balance,2)
+      gtotal = subtotal + taxamount + float(billsheet[6])
+      balance = gtotal- float(billsheet[7])
+      gtotal = round(gtotal,2)
+      balance = round(balance,2)
 
-          pbill.subtotal=round(subtotal,2)
-          pbill.taxamount=round(taxamount,2)
-          pbill.adjust=round(billsheet[6],2)
-          pbill.grandtotal=gtotal
-          pbill.advance=round(billsheet[7],2)
-          pbill.balance=balance
-          pbill.save()
+      pbill.subtotal=round(subtotal,2)
+      pbill.taxamount=round(taxamount,2)
+      pbill.adjust=round(billsheet[6],2)
+      pbill.grandtotal=gtotal
+      pbill.advance=round(billsheet[7],2)
+      pbill.balance=balance
+      pbill.save()
 
+      PurchaseBillTransactionHistory.objects.create(purchasebill=pbill,staff=pbill.staff,company=pbill.company,action='Created')
       return JsonResponse({'message': 'File uploaded successfully!'})
   else:
     return JsonResponse({'message': 'File upload Failed!'})
@@ -2507,8 +2335,11 @@ def import_purchase_bill(request):
 
 def billhistory(request):
   pid = request.POST['id']
-  pbill = PurchaseBill.objects.get(billno=pid)
-  hst = PurchaseBillTransactionHistory.objects.filter(purchasebill=pbill).last()
+  sid = request.session.get('staff_id')
+  staff = staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id) 
+  pbill = PurchaseBill.objects.get(billno=pid,company=cmp)
+  hst = PurchaseBillTransactionHistory.objects.filter(purchasebill=pbill,company=cmp).last()
   name = hst.staff.first_name + ' ' + hst.staff.last_name 
   action = hst.action
   return JsonResponse({'name':name,'action':action,'pid':pid})
@@ -2518,7 +2349,8 @@ def bankdata(request):
   bid = request.POST['id']
   bank = BankModel.objects.get(id=bid) 
   bank_no = bank.account_num
-  return JsonResponse({'bank_no':bank_no})
+  bank_name = bank.bank_name
+  return JsonResponse({'bank_no':bank_no,'bank_name':bank_name})
 
 
 def savecustomer(request):
@@ -2578,7 +2410,7 @@ def saveitem(request):
   intra_st = request.POST['intra_st']
   inter_st = request.POST['inter_st']
 
-  if intra_st != 'Taxable':
+  if taxref != 'Taxable':
     intra_st = 'GST0[0%]'
     inter_st = 'IGST0[0%]'
 
@@ -2586,6 +2418,9 @@ def saveitem(request):
   stock = request.POST.get('stock')
   itmprice = request.POST.get('itmprice')
   minstock = request.POST.get('minstock')
+
+  if not hsn:
+    hsn = None
 
   itm = ItemModel(item_name=name, item_hsn=hsn,item_unit=unit,item_taxable=taxref, item_gst=intra_st,item_igst=inter_st, item_sale_price=sell_price, 
                 item_purchase_price=cost_price,item_opening_stock=stock,item_current_stock=stock,item_at_price=itmprice,item_date=itmdate,
@@ -2603,19 +2438,17 @@ def item_dropdown(request):
   option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
   for option in option_objects:
       options[option.id] = [option.item_name]
-
   return JsonResponse(options)
 
 
 def custdata(request):
   cid = request.POST['id']
   part = party.objects.get(id=cid)
-  email = part.email
   phno = part.contact
   address = part.address
   pay = part.payment
   bal = part.openingbalance
-  return JsonResponse({'email':email, 'phno':phno, 'address':address, 'pay':pay, 'bal':bal})
+  return JsonResponse({'phno':phno, 'address':address, 'pay':pay, 'bal':bal})
 
 
 def itemdetails(request):
@@ -2628,25 +2461,21 @@ def itemdetails(request):
   qty = itm.item_current_stock
   return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
-
 def add_purchaseorder(request):
   sid = request.session.get('staff_id')
   staff =  staff_details.objects.get(id=sid)
   allmodules= modules_list.objects.get(company=staff.company,status='New')
   pbill = PurchaseBill.objects.filter(company=staff.company)
-
   context = {'staff':staff, 'allmodules':allmodules}
-  return render(request,'staff/purchasebillempty.html',context)
+  return render(request,'company/purchasebillempty.html',context)
   
   
 def view_purchaseorder(request):
    sid = request.session.get('staff_id')
    staff =  staff_details.objects.get(id=sid)
    allmodules= modules_list.objects.get(company=staff.company,status='New')
-   pbill = PurchaseBill.objects.filter(company=staff.company)
-
    context = {'staff':staff, 'allmodules':allmodules}
-   return render(request,'staff/purchasebillempty.html',context)
+   return render(request,'company/purchasebillempty.html',context)
 
 # ===========  estimate & delivery challan ===========shemeem==================   
    
@@ -4453,10 +4282,8 @@ def register(request):
                                    position='company',
                                    user_name=user_name,
                                    password=passw,
-                                   contact=mobile,
-                                   )
+                                   contact=mobile)
           demo_staff.save()
-        
           return redirect('company_reg2')
         else:
           data = User.objects.get(id = user_data.id)
@@ -4470,6 +4297,8 @@ def register(request):
                                    password=passw,
                                    contact=mobile)
           demo_staff.save()
+
+          print(demo_staff.company.company_name)
         
           return redirect('company_reg2')
       else:
@@ -4639,6 +4468,1030 @@ def Companyprofile(request):
   allmodules= modules_list.objects.get(company=staff.company.id,status='New')
   return render(request,'company/companyprofile.html',{'staff':staff,'allmodules':allmodules})
 
+def editcompanyprofile(request):
+  staff_id = request.session['staff_id']
+  print(staff_id)    
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  terms=payment_terms.objects.all()
+  return render(request,'company/editcompanyprofile.html',{'staff':staff,'allmodules':allmodules,'terms':terms})
+
+def editcompanyprofile_action(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+ 
+  if request.method == 'POST':
+    staff.company.company_name = request.POST['cname']
+    staff.company.user.email = request.POST['email']
+
+    staff.email = request.POST['email']
+
+    staff.company.contact = request.POST['ph']
+
+    staff.contact = request.POST['ph']
+
+    staff.company.address = request.POST['address']
+    staff.company.city = request.POST['city']
+    staff.company.state = request.POST['state']
+    staff.company.country = request.POST['country']
+    staff.company.pincode = request.POST['pincode']
+
+    t = request.POST['select']
+    terms = payment_terms.objects.get(id=t)
+    staff.company.dateperiod = terms
+    staff.company.start_date=date.today()
+    days=int(terms.days)
+
+    end= date.today() + timedelta(days=days)
+    staff.company.End_date=end
+
+    old=staff.company.profile_pic
+    new=request.FILES.get('image')
+    if old!=None and new==None:
+      staff.company.profile_pic=old
+    else:
+      staff.company.profile_pic=new
+    
+    staff.company.save() 
+    staff.company.user.save() 
+    staff.save()
+    return redirect('Companyprofile') 
+
+
+
+  return redirect('Companyprofile')
+
+
+def editmodule(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/editmodule.html',{'staff':staff,'allmodules':allmodules})
+
+def editmodule_action(request):
+  if request.method == 'POST':
+    staff_id = request.session['staff_id']
+    print(staff_id) 
+    staff =  staff_details.objects.get(id = staff_id)
+    com = company.objects.get(id = staff.company.id)
+    # if modules_list.objects.filter(company=com.id,status='Old').exists():
+    #   old=modules_list.objects.filter(company=com.id,status='Old')
+    #   old.delete()
+
+    # old_data=modules_list.objects.get(company=com.id,status='New')  
+    # old_data.status='Old'
+    # old_data.save()
+
+
+
+    c1=request.POST.get('c1')
+    c2=request.POST.get('c2')
+    c3=request.POST.get('c3')
+    c4=request.POST.get('c4')
+    c5=request.POST.get('c5')
+    c6=request.POST.get('c6')
+    c7=request.POST.get('c7')
+    c8=request.POST.get('c8')
+    c9=request.POST.get('c9')
+    c10=request.POST.get('c10')
+    c11=request.POST.get('c11')
+    c12=request.POST.get('c12')
+    c13=request.POST.get('c13')
+    c14=request.POST.get('c14')
+    c15=request.POST.get('c15')
+    
+    data=modules_list(company=com,sales_invoice = c1,
+                      Estimate=c2,Payment_in=c3,sales_order=c4,
+                      Delivery_challan=c5,sales_return=c6,Purchase_bills=c7,
+                      Payment_out=c8,Purchase_order=c9,Purchase_return=c10,
+                      Bank_account=c11,Cash_in_hand=c12, cheques=c13,Loan_account=c14,Upi=c15,status='Pending')
+    data.save()
+    data1=modules_list.objects.filter(company=com.id,status='Pending').update(update_action=1)
+    return redirect('Companyprofile')
+    
+    
+  return redirect('Companyprofile')
+
+
+def companyreport(request):
+  staff_id = request.session['staff_id']
+  print(staff_id) 
+  staff =  staff_details.objects.get(id = staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  return render(request,'company/companyreport.html',{'staff':staff,'allmodules':allmodules}) 
+
+
+
+
+
+def staff_profile(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+
+          }
+  return render(request,'staff/staff_profile.html',context)
+
+def editstaff_profile(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  context = {
+              'staff' : staff,
+              'allmodules':allmodules
+
+          }
+  return render(request,'staff/editstaff_profile.html',context)
+
+def editstaff_profile_action(request):
+  if request.method == 'POST':
+    staff_id = request.session['staff_id']
+    staff =  staff_details.objects.get(id=staff_id)
+    staff.first_name = request.POST['fname']
+    staff.last_name = request.POST['lname']
+    staff.user_name = request.POST['uname']
+    staff.email = request.POST['email']
+    staff.contact = request.POST['ph']
+    old=staff.img
+    new=request.FILES.get('image')
+    if old!=None and new==None:
+      staff.img=old
+    else:
+      staff.img=new
+
+    staff.save()  
+
+    return redirect ('staff_profile')
+  return redirect ('staff_profile')
+
+def view_parties(request):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  
+ 
+  Party=party.objects.filter(company=staff.company.id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  return render(request, 'company/view_parties.html',{'staff':staff,'allmodules':allmodules,'Party':Party})
+
+def save_parties(request):
+    if request.method == 'POST':
+        staff_id = request.session['staff_id']
+        staff =  staff_details.objects.get(id=staff_id)
+        
+        party_name = request.POST['partyname']
+        gst_no = request.POST['gstno']
+        contact = request.POST['contact']
+        gst_type = request.POST['gst']
+        state = request.POST['state']
+        address = request.POST['address']
+        email = request.POST['email']
+        openingbalance = request.POST.get('balance', '')
+        payment = request.POST.get('paymentType', '')
+        creditlimit = request.POST.get('creditlimit', '')
+        current_date = request.POST['currentdate']
+        End_date = request.POST.get('enddate', None)
+        additionalfield1 = request.POST['additionalfield1']
+        additionalfield2 = request.POST['additionalfield2']
+        additionalfield3 = request.POST['additionalfield3']
+       
+        if (
+          not party_name
+          
+      ):
+          return render(request, 'add_parties.html')
+
+        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
+                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=staff.company.user,company=staff.company)
+        part.save() 
+
+        if 'save_and_new' in request.POST:
+            
+            return render(request, 'company/add_parties.html')
+        else:
+          
+            return redirect('view_parties')
+
+    return render(request, 'company/add_parties.html')  
+
+def view_party(request,id):
+  staff_id = request.session['staff_id']
+  staff =  staff_details.objects.get(id=staff_id)
+  getparty=party.objects.get(id=id)
+  Party=party.objects.filter(company=staff.company.id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  return render(request, 'company/view_party.html',{'staff':staff,'allmodules':allmodules,'Party':Party,'getparty':getparty})
 
 
     
+# ===================Nasneen===========
+
+
+
+def sale_order(request):
+  
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+
+  sale = salesorder.objects.filter(comp=staff.company)
+  for i in sale:
+      last_transaction = sale_transaction.objects.filter(sales_order=i).order_by('-date').first()
+      i.last= last_transaction.action
+      i.by=last_transaction.staff
+      print(last_transaction.action)
+      
+      
+
+  context={
+    'sale':sale,'staff':staff,'allmodules':allmodules
+  }
+  return render(request, 'company/sale_order.html',context)
+
+def saleorder_create(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  # cmp = staff.company
+  cmp = company.objects.get(id=staff.company.id)
+  par= party.objects.filter(company=cmp,user=cmp.user)
+  item = ItemModel.objects.filter(company=staff.company)
+  bnk = BankModel.objects.filter(company=cmp)
+  order = salesorder.next_orderno()
+  
+  context={
+    'party':par,'item':item,'staff':staff,'order':order,'bnk':bnk,'allmodule':allmodules
+  }
+  return render(request, 'company/saleorder_create.html',context)
+
+
+def getparty(request):
+    p_id = request.GET.get('id')
+    print(p_id)
+    par = party.objects.get(party_name=p_id)
+    data7 = {'email': par.email,'balance':par.openingbalance,'payment':par.payment}
+    
+    print(data7)
+    return JsonResponse(data7)
+def getacc(request):
+    b_id = request.GET.get('id')
+    print(b_id)
+    par = BankModel.objects.get(id=b_id)
+    data7 = {'acc': par.account_num}
+    
+    print(data7)
+    return JsonResponse(data7)
+
+
+
+def getproduct(request):
+    p_id = request.GET.get('id')
+    print(p_id)
+    item = ItemModel.objects.get(id=p_id)
+    data7 = {'hsn': item.item_hsn,'price':item.item_sale_price,'gst':item.item_gst,'igst':item.item_igst}
+    
+    print(data7)
+    return JsonResponse(data7)
+
+#  if 'staff_id' in request.session:
+#     if request.session.has_key('staff_id'):
+#       staff_id = request.session['staff_id']
+           
+#     else:
+#       return redirect('/')
+#   staff =  staff_details.objects.get(id=staff_id)
+
+@login_required(login_url='login')
+def create_saleorder(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  if request.method == 'POST':
+    prty = request.POST.get('party')
+    # staff =  staff_details.objects.get(id=staff_id)
+    cmp= staff.company
+    payment = request.POST.get('paymethode')
+    pos=request.POST.get('stateofsply')
+    attach=request.FILES.get('attach')       
+  
+    print(request.POST.getlist("product[]"))
+    print(request.POST.get('orderdate'))
+
+    sale = salesorder(
+      partyname=prty,
+      orderno=request.POST.get('orderno'),
+      orderdate=request.POST.get('orderdate'),
+      duedate=request.POST.get('duedate'),
+      placeofsupply=pos,
+      payment_method=payment,
+      subtotal=request.POST.get('subtotal'),
+      taxamount=request.POST.get('taxamount'),
+      adjustment=request.POST.get('adj'),
+      grandtotal=request.POST.get('grandtotal'),
+      note=request.POST.get('note'),
+      paid=request.POST.get('paid'),
+      balance=request.POST.get('baldue'),
+      file=attach,
+      staff=staff,
+      comp=cmp,
+      
+
+    )
+
+    if payment == 'check':
+      sale.checkno = request.POST.get('checkno')
+    elif payment == 'upi':
+      sale.UPI = request.POST.get('upiid')
+    elif payment != 'check' and payment != 'upi 'and payment != 'cash':
+      sale.accno = request.POST.get('accno')
+    
+    if pos == 'state':
+      sale.CGST=request.POST.get('cgst')
+      sale.SGST=request.POST.get('sgst')
+    elif pos == 'other state':
+      sale.IGST=request.POST.get('igst')
+
+    sale.save()
+    print("saved===================================")
+    
+    product = request.POST.getlist("product[]")
+    hsn  = request.POST.getlist("hsn[]")
+    qty = request.POST.getlist("qty[]")
+    price = request.POST.getlist("price[]")
+    tax = request.POST.getlist("tax1[]")
+    discount = request.POST.getlist("discount[]")
+    total = request.POST.getlist("total[]")
+    salesorderid=salesorder.objects.get(id =sale.id)
+    print(product)
+    print(len(hsn))
+    print(len(qty))
+    print(len(price))
+   
+    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total):
+      mapped = zip(product, hsn, qty, price, tax, discount, total)
+      mapped = list(mapped)
+      for ele in mapped:
+        print(ele[0])
+        prod=ItemModel.objects.get(id=ele[0])
+        salesorderAdd = sales_item(
+          product=prod,
+          hsn=ele[1],
+          qty=ele[2],
+          price=ele[3],
+          tax=ele[4],
+          discount=ele[5],
+          total=ele[6],
+          sale_order=salesorderid,
+          cmp=staff.company
+            )
+        salesorderAdd.save()
+        print("item saved===================================")
+      
+      tran= sale_transaction(
+        sales_order=salesorderid,staff=staff,company=cmp,action="Created",date=date.today()
+      )
+      tran.save()
+    if request.POST.get('save_and_next'):
+      return redirect('saleorder_create')
+    elif request.POST.get('save'):
+      return redirect('sale_order')
+    
+  return redirect('sale_order')
+      
+      
+      
+def saleorder_view(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)  
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+  sale = salesorder.objects.get(id=id)
+  item = sales_item.objects.filter(sale_order=sale)
+  s = salesorder.objects.all()
+  prty = party.objects.get(party_name=sale.partyname)
+  
+  context={
+    'sale':sale,'item':item,'s':s,'prty':prty,'staff':staff
+  }
+  return render(request, 'company/saleorder_view.html',context)
+
+def delete_saleorder(request,id):
+  sale = salesorder.objects.get(id=id)
+  item = sales_item.objects.filter(sale_order=sale)
+  for i in item:
+    i.delete()
+  sale.delete()
+  return redirect('sale_order')
+  
+  
+  
+def import_excel(request):
+    if request.method == "POST" and request.FILES.get("file"):
+      staff_id = request.session['staff_id']
+      staff =  staff_details.objects.get(id=staff_id)
+      print("open============================================")
+      excel_file = request.FILES['file']
+      if excel_file.name.endswith('.xlsx'):
+        df = pd.read_excel(excel_file, engine='openpyxl')
+        for index, row in df.iterrows():
+          print(row['PARTY NAME'])
+          salesorder.objects.create(
+                    partyname=row['PARTY NAME'],
+                    orderno=row['NUMBER'],
+                    orderdate=row['DATE'],
+                    duedate=row['DUE DATE'],
+                    grandtotal=row['TOTAL'],
+                    balance=row['BALANCE'],
+                    status=row['STATUS'],
+                    action=row['ACTION'],
+                    staff=staff,
+                    comp=staff.company,
+                    # Add other fields accordingly
+                )
+        print("success============================================")
+        return redirect('sale_order')  # Redirect to a success page
+      print("end===========================")
+    return redirect('sale_order')
+  
+  
+def add_party(request):
+  if request.method == 'POST':
+        Company = company.objects.get(user=request.user)
+        user_id = request.user.id
+        
+        party_name = request.POST['partyname']
+        gst_no = request.POST['gstno']
+        contact = request.POST['contact']
+        gst_type = request.POST['gst']
+        state = request.POST['state']
+        address = request.POST['address']
+        email = request.POST['email']
+        openingbalance = request.POST.get('balance', '')
+        payment = request.POST.get('paymentType', '')
+        creditlimit = request.POST.get('creditlimit', '')
+        current_date = request.POST['currentdate']
+        End_date = request.POST.get('enddate', None)
+        additionalfield1 = request.POST['additionalfield1']
+        additionalfield2 = request.POST['additionalfield2']
+        additionalfield3 = request.POST['additionalfield3']
+        user=User.objects.get(id=user_id)
+        comp=Company
+        if (
+          not party_name
+          
+      ):
+          return render(request, 'add_parties.html')
+
+        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
+                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=user,company=comp)
+        part.save() 
+
+        options = {}
+        option_objects = party.objects.filter(user=request.user)
+        for option in option_objects:
+            options[option.id] = [option.party_name]
+        return JsonResponse(options) 
+  else:
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+  
+def add_item(request):
+  if request.method=='POST':
+    user = User.objects.get(id=request.user.id)
+    company_user_data = company.objects.get(user=request.user.id)
+    item_name = request.POST.get('item_name')
+    item_hsn = request.POST.get('item_hsn')
+    item_unit = request.POST.get('item_unit')
+    item_taxable = request.POST.get('item_taxable')
+    item_gst = request.POST.get('item_gst')
+    item_igst = request.POST.get('item_igst')
+    item_sale_price = request.POST.get('item_sale_price')
+    item_purchase_price = request.POST.get('item_purchase_price')
+    item_opening_stock = request.POST.get('item_opening_stock')
+    item_current_stock = item_opening_stock
+    if item_opening_stock == '' or None :
+      item_opening_stock = 0
+      item_current_stock = 0
+    item_at_price = request.POST.get('item_at_price')
+    if item_at_price == '' or None:
+      item_at_price =0
+    item_date = request.POST.get('item_date')
+    item_min_stock_maintain = request.POST.get('item_min_stock_maintain')
+    if item_min_stock_maintain == ''  or None:
+      item_min_stock_maintain = 0
+    item_data = ItemModel(user=user,
+                          company=company_user_data,
+                          item_name=item_name,
+                          item_hsn=item_hsn,
+                          item_unit=item_unit,
+                          item_taxable=item_taxable,
+                          item_gst=item_gst,
+                          item_igst=item_igst,
+                          item_sale_price=item_sale_price,
+                          item_purchase_price=item_purchase_price,
+                          item_opening_stock=item_opening_stock,
+                          item_current_stock=item_current_stock,
+                          item_at_price=item_at_price,
+                          item_date=item_date,
+                          item_min_stock_maintain=item_min_stock_maintain)
+    item_data.save()
+    options = {}
+    option_objects = ItemModel.objects.filter(user=request.user)
+    for option in option_objects:
+      options[option.id] = [option.item_name]
+    return JsonResponse(options) 
+  else:
+    return JsonResponse({'error': 'Invalid request'}, status=400)
+  
+def sales_transaction(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)  
+  tr= sale_transaction.objects.filter(sales_order=id)
+  context={'tr':tr,'staff':staff}
+  return render(request,'sale_transaction.html',context)
+
+
+def saleorder_edit(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  sale = salesorder.objects.get(id=id)
+  cmp = staff.company
+  par= party.objects.filter(company=staff.company)
+  item = ItemModel.objects.filter(company=staff.company)
+  sitem = sales_item.objects.filter(sale_order=sale)
+  bnk = BankModel.objects.filter(company=cmp)
+  
+  context={
+    'party':par,'item':item,'staff':staff,'bnk':bnk,'sale':sale,'sitem':sitem
+  }
+  return render(request, 'saleorder_edit.html',context)
+
+
+
+
+@login_required(login_url='login')
+def edit_saleorder(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  if request.method == 'POST':
+    so = salesorder.objects.get(id=id)
+    
+    
+    so.partyname = request.POST.get('party')
+    so.orderno=request.POST.get('orderno')
+    so.orderdate=request.POST.get('orderdate')
+    so.duedate=request.POST.get('duedate')
+    
+    pos=request.POST.get('stateofsply')
+    if pos != '':
+      so.placeofsupply=pos
+      if pos == 'state':
+        so.CGST=request.POST.get('cgst')
+        so.SGST=request.POST.get('sgst')
+      elif pos == 'other state':
+        so.IGST=request.POST.get('igst')
+      
+    payment = request.POST.get('paymethode')
+    if payment != '':
+      so.payment_method=payment
+      if payment == 'check':
+        so.checkno = request.POST.get('checkno')
+      elif payment == 'upi':
+        so.UPI = request.POST.get('upiid')
+      elif payment != 'check' and payment != 'upi 'and payment != 'cash':
+        so.accno = request.POST.get('accno')
+        
+    if request.FILES.get('attach') != '':
+      so.file=request.FILES.get('attach')    
+    so.note=request.POST.get('note')
+    so.subtotal=request.POST.get('subtotal')
+    so.taxamount=request.POST.get('taxamount')
+    so.adjustment=request.POST.get('adj')
+    so.grandtotal=request.POST.get('grandtotal')
+    so.paid=request.POST.get('paid')
+    so.balance=request.POST.get('baldue')
+    
+    so.save()
+    print("updated===================================")
+    salesorderid=salesorder.objects.get(id =so.id)
+
+    
+    product = request.POST.getlist("product[]")
+    hsn  = request.POST.getlist("hsn[]")
+    qty = request.POST.getlist("qty[]")
+    price = request.POST.getlist("price[]")
+    tax = request.POST.getlist("tax1[]")
+    discount = request.POST.getlist("discount[]")
+    total = request.POST.getlist("total[]")
+    # salesorderid=salesorder.objects.get(id =so.id)
+    print(len(product))
+    print(len(hsn))
+    print(len(qty))
+    print(len(price))
+    
+    objects_to_delete = sales_item.objects.filter(sale_order=salesorderid)
+    objects_to_delete.delete()
+   
+    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total):
+      mapped = zip(product, hsn, qty, price, tax, discount, total)
+      mapped = list(mapped)
+      for ele in mapped:
+        print(ele[0])
+        prod=ItemModel.objects.get(id=ele[0])
+        salesorderAdd = sales_item(
+          product=prod,
+          hsn=ele[1],
+          qty=ele[2],
+          price=ele[3],
+          tax=ele[4],
+          discount=ele[5],
+          total=ele[6],
+          sale_order=salesorderid,
+          cmp=staff.company
+            )
+        salesorderAdd.save()
+      
+    tran= sale_transaction.objects.create(
+      sales_order=salesorderid,staff=staff,company=staff.company,action="Updated",date=date.today()
+    )
+    # tran.save()
+    
+    return redirect('sale_order')
+    
+  return redirect('sale_order')
+
+
+
+def saleorderto_invoice(request,id):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  company_instance = company.objects.get(id=staff.company.id)
+  sale = salesorder.objects.get(id=id)
+  par= party.objects.get(party_name=sale.partyname)
+  Party=party.objects.filter(company=company_instance)
+  item=ItemModel.objects.filter(company=company_instance)
+  bank=BankModel.objects.filter(company=company_instance)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  if SalesInvoice.objects.filter(company=company_instance).exists():
+        invoice_count = SalesInvoice.objects.last().id
+        next_count = invoice_count+1
+  else:
+        next_count=1
+
+
+  return render(request, 'company/saleorderto_invoice.html',{'staff':staff,'Party':Party,'item':item,'bank':bank,'allmodules':allmodules,'sale':sale,'next_count':next_count,'par':par})
+
+
+def editsave_salesinvoice(request,id):
+
+    if request.method == 'POST':
+        
+        if 'staff_id' in request.session:
+            staff_id = request.session['staff_id']
+        else:
+            return redirect('/')
+
+        staff = staff_details.objects.get(id=staff_id)
+        company_instance = company.objects.get(id=staff.company.id)
+        sales_invoice=SalesInvoice.objects.get(id=id,company=company_instance,staff=staff)
+        
+        sales_invoice.party_name = request.POST.get('partyname')
+        sales_invoice.contact = request.POST.get('contact')
+        sales_invoice.address = request.POST.get('address')
+        sales_invoice.invoice_no = request.POST.get('invoiceno')
+        sales_invoice.date = request.POST.get('date')
+        sales_invoice.state_of_supply = request.POST.get('state_of_supply')
+        sales_invoice.paymenttype = request.POST.get('bank')
+        sales_invoice.cheque = request.POST.get('chequeNumber')
+        sales_invoice.upi = request.POST.get('upiNumber')
+        sales_invoice.accountno = request.POST.get('accountNumber')
+        sales_invoice.description = request.POST.get('description')
+        sales_invoice.subtotal = request.POST.get('subtotal')
+        sales_invoice.igst = request.POST.get('igst')
+        sales_invoice.cgst = request.POST.get('cgst')
+        sales_invoice.sgst = request.POST.get('sgst')
+        sales_invoice.total_taxamount = request.POST.get('total_taxamount')
+        sales_invoice.adjustment = request.POST.get('adjustment')
+        sales_invoice.grandtotal = request.POST.get('grandtotal')
+        sales_invoice.paidoff = request.POST.get('paidoff')
+        sales_invoice.totalbalance = request.POST.get('totalbalance')
+    
+        sales_invoice.save()
+
+        item = tuple(request.POST.getlist('item[]'))
+        hsn = tuple(request.POST.getlist('hsn[]'))
+        quantity = tuple(request.POST.getlist('quantity[]'))
+        rate = tuple(request.POST.getlist('rate[]'))
+        discount = tuple(request.POST.getlist('discount[]'))
+        tax = tuple(request.POST.getlist('tax[]'))
+        totalamount = tuple(request.POST.getlist('amount[]'))
+
+        SalesInvoiceItem.objects.filter(salesinvoice=sales_invoice,company=company_instance).delete()
+
+        if len(item) == len(hsn) == len(quantity) == len(rate) == len(discount) == len(tax) == len(totalamount):
+      
+            mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
+            mapped=list(mapped)
+            for ele in mapped:
+              itm = ItemModel.objects.get(id=ele[0])
+              SalesInvoiceItem.objects.create( hsn=ele[1],quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=sales_invoice,company=company_instance,item =itm,staff=staff)
+
+        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
+                                              staff=staff,      
+                                              salesinvoice=sales_invoice,
+                                              action="UPDATED",
+                                              done_by_name=staff.first_name,
+                                              )
+        tr_history.save()
+
+        
+        return redirect('view_salesinvoice')
+
+    return render(request, 'company/edit_salesinvoice.html')
+  
+  
+  
+  # =======================================================================
+def add_salesinvoice(request):
+  if 'staff_id' in request.session:
+    if request.session.has_key('staff_id'):
+      staff_id = request.session['staff_id']
+           
+    else:
+      return redirect('/')
+  staff =  staff_details.objects.get(id=staff_id)
+  company_instance = company.objects.get(id=staff.company.id)
+
+  Party=party.objects.filter(company=company_instance)
+  item=ItemModel.objects.filter(company=company_instance)
+  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
+  bank=BankModel.objects.filter(company=company_instance)
+  if SalesInvoice.objects.filter(company=company_instance).exists():
+        invoice_count = SalesInvoice.objects.last().id
+        next_count = invoice_count+1
+  else:
+        next_count=1
+
+  return render(request, 'company/add_salesinvoice.html',{'staff':staff,'Party':Party,'item':item,'bank':bank,'count':next_count,'allmodules':allmodules})
+
+def save_sales_invoice(request):
+
+    if request.method == 'POST':
+        
+        if 'staff_id' in request.session:
+            staff_id = request.session['staff_id']
+        else:
+            return redirect('/')
+
+        staff = staff_details.objects.get(id=staff_id)
+        company_instance = staff.company 
+        
+        party_name = request.POST.get('partyname')
+        contact = request.POST.get('contact')
+        address = request.POST.get('address')
+        invoice_no = request.POST.get('invoiceno')
+        date = request.POST.get('date')
+        state_of_supply = request.POST.get('state_of_supply')
+        paymenttype = request.POST.get('bank')
+        cheque = request.POST.get('chequeNumber')
+        upi = request.POST.get('upiNumber')
+        accountno = request.POST.get('accountNumber')
+        item = request.POST.getlist('item[]')
+        hsn = request.POST.getlist('hsn[]')
+        quantity = request.POST.getlist('quantity[]')
+        rate = request.POST.getlist('rate[]')
+        discount = request.POST.getlist('discount[]')
+        tax = request.POST.getlist('tax[]')
+        totalamount = request.POST.getlist('amount[]')
+        description = request.POST.get('description')
+        subtotal = request.POST.get('subtotal')
+        igst = request.POST.get('igst')
+        cgst = request.POST.get('cgst')
+        sgst = request.POST.get('sgst')
+        total_taxamount = request.POST.get('total_taxamount')
+        adjustment = request.POST.get('adjustment')
+        grandtotal = request.POST.get('grandtotal')
+        paidoff = request.POST.get('paidoff')
+        totalbalance = request.POST.get('totalbalance')
+
+        party_instance=party.objects.get(party_name=party_name)
+        
+      
+        sales_invoice = SalesInvoice(
+            staff=staff,
+            company=company_instance,
+            party=party_instance,
+            party_name=party_name,
+            contact=contact,
+            address=address,
+            invoice_no=invoice_no,
+            date=date,
+            state_of_supply=state_of_supply,
+            paymenttype=paymenttype,
+            cheque=cheque,
+            upi=upi,
+            accountno=accountno,
+            description=description,
+            subtotal=subtotal,
+            igst=igst,
+            cgst=cgst,
+            sgst=sgst,
+            total_taxamount=total_taxamount,
+            adjustment=adjustment,
+            grandtotal=grandtotal,
+            paidoff=paidoff,
+            totalbalance=totalbalance,
+        )
+    
+        sales_invoice.save()
+
+        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
+                                              staff=staff,      
+                                              salesinvoice=sales_invoice,
+                                              action="CREATED",
+                                              done_by_name=staff.first_name,
+                                              )
+        tr_history.save()
+
+        invoice = SalesInvoice.objects.get(id=sales_invoice.id)
+
+        if len(item)==len(hsn)==len(quantity)==len(rate)==len(discount)==len(tax)==len(totalamount):
+          mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
+          mapped=list(mapped)
+        for ele in mapped:
+          itm = ItemModel.objects.get(id=ele[0])
+          SalesInvoiceItem.objects.create(item = itm,hsn=ele[1], quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=invoice,company=company_instance)
+
+        
+
+        if 'save_and_new' in request.POST:
+            return render(request, 'staff/add_salesinvoice.html')
+        else:
+            return redirect('view_salesinvoice')
+
+    return render(request, 'company/add_salesinvoice.html')
+  
+def editsave_salesinvoice(request,id):
+
+    if request.method == 'POST':
+        
+        if 'staff_id' in request.session:
+            staff_id = request.session['staff_id']
+        else:
+            return redirect('/')
+
+        staff = staff_details.objects.get(id=staff_id)
+        company_instance = company.objects.get(id=staff.company.id)
+        sales_invoice=SalesInvoice.objects.get(id=id,company=company_instance,staff=staff)
+        
+        sales_invoice.party_name = request.POST.get('partyname')
+        sales_invoice.contact = request.POST.get('contact')
+        sales_invoice.address = request.POST.get('address')
+        sales_invoice.invoice_no = request.POST.get('invoiceno')
+        sales_invoice.date = request.POST.get('date')
+        sales_invoice.state_of_supply = request.POST.get('state_of_supply')
+        sales_invoice.paymenttype = request.POST.get('bank')
+        sales_invoice.cheque = request.POST.get('chequeNumber')
+        sales_invoice.upi = request.POST.get('upiNumber')
+        sales_invoice.accountno = request.POST.get('accountNumber')
+        sales_invoice.description = request.POST.get('description')
+        sales_invoice.subtotal = request.POST.get('subtotal')
+        sales_invoice.igst = request.POST.get('igst')
+        sales_invoice.cgst = request.POST.get('cgst')
+        sales_invoice.sgst = request.POST.get('sgst')
+        sales_invoice.total_taxamount = request.POST.get('total_taxamount')
+        sales_invoice.adjustment = request.POST.get('adjustment')
+        sales_invoice.grandtotal = request.POST.get('grandtotal')
+        sales_invoice.paidoff = request.POST.get('paidoff')
+        sales_invoice.totalbalance = request.POST.get('totalbalance')
+    
+        sales_invoice.save()
+
+        item = tuple(request.POST.getlist('item[]'))
+        hsn = tuple(request.POST.getlist('hsn[]'))
+        quantity = tuple(request.POST.getlist('quantity[]'))
+        rate = tuple(request.POST.getlist('rate[]'))
+        discount = tuple(request.POST.getlist('discount[]'))
+        tax = tuple(request.POST.getlist('tax[]'))
+        totalamount = tuple(request.POST.getlist('amount[]'))
+
+        SalesInvoiceItem.objects.filter(salesinvoice=sales_invoice,company=company_instance).delete()
+
+        if len(item) == len(hsn) == len(quantity) == len(rate) == len(discount) == len(tax) == len(totalamount):
+      
+            mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
+            mapped=list(mapped)
+            for ele in mapped:
+              itm = ItemModel.objects.get(id=ele[0])
+              SalesInvoiceItem.objects.create( hsn=ele[1],quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=sales_invoice,company=company_instance,item =itm,staff=staff)
+
+        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
+                                              staff=staff,      
+                                              salesinvoice=sales_invoice,
+                                              action="UPDATED",
+                                              done_by_name=staff.first_name,
+                                              )
+        tr_history.save()
+
+        
+        return redirect('view_salesinvoice')
+
+    return render(request, 'company/edit_salesinvoice.html')
+  
+def itemdetailinvoice(request):
+  itmid = request.GET['id']
+  itm = ItemModel.objects.get(id=itmid)
+  hsn = itm.item_hsn
+  price = itm.item_sale_price
+  return JsonResponse({'hsn':hsn, 'price':price})
+
+
+def itemdata_salesinvoice(request):
+    if 'staff_id' in request.session:
+        if request.session.has_key('staff_id'):
+            staff_id = request.session['staff_id']
+    else:
+        return redirect('/')
+
+    selected_item_id = request.GET.get('id', None)
+
+    if selected_item_id:
+        staff = staff_details.objects.get(id=staff_id)
+        try:
+            item = ItemModel.objects.get(id=selected_item_id)
+            name = item.item_name
+            rate = item.item_sale_price
+            hsn = item.item_hsn
+            place = staff.company.state
+
+            return JsonResponse({"status": " not", 'place': place, 'rate': rate, 'hsn': hsn,'name':name})
+        except ItemModel.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Item ID not provided'}, status=400)
+    
+
+def itemdata_salesinvoiceedit(request):
+    if 'staff_id' in request.session:
+        if request.session.has_key('staff_id'):
+            staff_id = request.session['staff_id']
+    else:
+        return redirect('/')
+
+    selected_item_id = request.GET.get('id', None)
+
+    if selected_item_id:
+        staff = staff_details.objects.get(id=staff_id)
+        try:
+            item = ItemModel.objects.get(id=selected_item_id)
+            name = item.item_name
+            rate = item.item_sale_price
+            hsn = item.item_hsn
+            place = staff.company.state
+
+            return JsonResponse({"status": " not", 'place': place, 'rate': rate, 'hsn': hsn})
+        except ItemModel.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+    else:
+        return JsonResponse({'error': 'Item ID not provided'}, status=400)

@@ -173,7 +173,7 @@
                   <hr>
                   {% endif %}
                   {% if allmodules.sales_order != Null %}
-                  <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                  <a href="{% url 'sale_order' %}" class="d-flex align-items-center gap-2 dropdown-item">
                     <!-- <i class="ti ti-user fs-6"></i> -->
                     <p class="mb-0 fs-3">Sale Order</p>
                   </a>
@@ -213,11 +213,14 @@
               </button>
               <div class="dropdown-container" style="background-color: aliceblue;padding: 20px;justify-content: center;">
                 {% if allmodules.Purchase_bills != Null %}
-                  <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
-                    <!-- <i class="ti ti-mail fs-6"></i> -->
+                <a href="{% url 'view_purchasebill' %}" class="d-flex align-items-center gap-2 dropdown-item">
+                  <!-- <i class="ti ti-mail fs-6"></i> -->
+                  <div class="d-flex">
                     <p class="mb-0 fs-3">Purchase Bills</p>
-                  </a>
-                  <hr>
+                    <a href="{% url 'add_purchasebill' %}"><i class="fa fa-plus text-dark" ></i></a>
+                  </div>
+                </a>
+                <hr>
                   {% endif %}
                   {% if allmodules.Payment_out != Null %}
                   <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
@@ -227,11 +230,14 @@
                   <hr>
                   {% endif %}
                   {% if allmodules.Purchase_order != Null %}
-                  <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">
+                  <a href="{% url 'view_purchaseorder' %}" class="d-flex align-items-center gap-2 dropdown-item">
                     <!-- <i class="ti ti-list-check fs-6"></i> -->
-                    <p class="mb-0 fs-3">Purchase Order</p>
+                    <div class="d-flex">
+                      <p class="mb-0 fs-3">Purchase Order</p>
+                      <a href="{% url 'add_purchaseorder' %}"><i class="fa fa-plus text-dark" ></i></a>
+                    </div>
                   </a>
-                  <hr>
+                  <br>
                   {% endif %}
                   {% if allmodules.Purchase_return != Null %}
                   <a href="javascript:void(0)" class="d-flex align-items-center gap-2 dropdown-item">

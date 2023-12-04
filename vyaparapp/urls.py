@@ -62,9 +62,9 @@ urlpatterns = [
     path('admin_notification', views.admin_notification, name='admin_notification'),
     path('module_updation_details/<mid>', views.module_updation_details, name='module_updation_details'),
     path('module_updation_ok/<mid>', views.module_updation_ok, name='module_updation_ok'),
-    path('staff_profile/<sid>', views.staff_profile, name='staff_profile'),
-    path('editstaff_profile/<sid>', views.editstaff_profile, name='editstaff_profile'),
-    path('editstaff_profile_action/<sid>', views.editstaff_profile_action, name='editstaff_profile_action'),
+    path('staff_profile', views.staff_profile, name='staff_profile'),
+    path('editstaff_profile', views.editstaff_profile, name='editstaff_profile'),
+    path('editstaff_profile_action', views.editstaff_profile_action, name='editstaff_profile_action'),
 
     path('distributor_home', views.distributor_home, name='distributor_home'),
     path('distributor_reg', views.distributor_reg, name='distributor_reg'),
@@ -209,6 +209,28 @@ urlpatterns = [
 
 
     # ===================================== shemeem - end ==================================================
+    
+    # ======================================== NASNEEN ======================================================
+    path('sale_order', views.sale_order, name='sale_order'),
+    path('saleorder_create', views.saleorder_create, name='saleorder_create'),
+    path('getparty', views.getparty, name='getparty'),
+    path('getproduct', views.getproduct, name='getproduct'),
+    path('getacc', views.getacc, name='getacc'),
+    path('create_saleorder', views.create_saleorder, name='create_saleorder'),
+    path('saleorder_view/<int:id>', views.saleorder_view, name='saleorder_view'),
+    path('delete_saleorder/<int:id>', views.delete_saleorder, name='delete_saleorder'),
+    path('import_excel', views.import_excel, name='import_excel'),
+    path('add_party', views.add_party, name='add_party'),
+    path('add_item', views.add_item, name='add_item'),
+    path('sales_transaction/<int:id>', views.sales_transaction, name='sales_transaction'),
+    path('saleorder_edit/<int:id>', views.saleorder_edit, name='saleorder_edit'),
+    path('edit_saleorder/<int:id>', views.edit_saleorder, name='edit_saleorder'),
+    path('saleorderto_invoice/<int:id>', views.saleorderto_invoice, name='saleorderto_invoice'),
+    
+    path('editsave_salesinvoice/<int:id>/', views.editsave_salesinvoice, name='editsave_salesinvoice'),
+    path('itemdetailinvoice', views.itemdetailinvoice, name='itemdetailinvoice'),
+    path('itemdata_salesinvoice',views.itemdata_salesinvoice,name='itemdata_salesinvoice'),
+    path('itemdata_salesinvoiceedit',views.itemdata_salesinvoiceedit,name='itemdata_salesinvoiceedit'),
     
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
     
