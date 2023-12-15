@@ -226,11 +226,15 @@ urlpatterns = [
     path('saleorder_edit/<int:id>', views.saleorder_edit, name='saleorder_edit'),
     path('edit_saleorder/<int:id>', views.edit_saleorder, name='edit_saleorder'),
     path('saleorderto_invoice/<int:id>', views.saleorderto_invoice, name='saleorderto_invoice'),
+    path('saleorder_convert/<int:sid>', views.saleorder_convert, name='saleorder_convert'),
     
     path('editsave_salesinvoice/<int:id>/', views.editsave_salesinvoice, name='editsave_salesinvoice'),
     path('itemdetailinvoice', views.itemdetailinvoice, name='itemdetailinvoice'),
     path('itemdata_salesinvoice',views.itemdata_salesinvoice,name='itemdata_salesinvoice'),
     path('itemdata_salesinvoiceedit',views.itemdata_salesinvoiceedit,name='itemdata_salesinvoiceedit'),
+    path('item_save_invoice', views.item_save_invoice, name='item_save_invoice'),
+    path('salesinvoice_save_parties', views.salesinvoice_save_parties, name='salesinvoice_save_parties'),
+    path('item_invoicedropdown', views.item_invoicedropdown, name='item_invoicedropdown'),
     
     re_path(r'^static/(?P<path>.*)$', serve,{'document_root': settings.STATIC_ROOT}),
     

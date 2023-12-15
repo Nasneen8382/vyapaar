@@ -4705,7 +4705,7 @@ def sale_order(request):
 
   sale = salesorder.objects.filter(comp=staff.company)
   for i in sale:
-      last_transaction = sale_transaction.objects.filter(sales_order=i).order_by('-date').first()
+      last_transaction = saleorder_transaction.objects.filter(sales_order=i).order_by('-id').first()
       i.last= last_transaction.action
       i.by=last_transaction.staff
       print(last_transaction.action)
@@ -4716,6 +4716,8 @@ def sale_order(request):
     'sale':sale,'staff':staff,'allmodules':allmodules
   }
   return render(request, 'company/sale_order.html',context)
+
+
 
 def saleorder_create(request):
   if 'staff_id' in request.session:
@@ -4775,7 +4777,7 @@ def getproduct(request):
 #       return redirect('/')
 #   staff =  staff_details.objects.get(id=staff_id)
 
-@login_required(login_url='login')
+# @login_required(login_url='login')
 def create_saleorder(request):
   if 'staff_id' in request.session:
     if request.session.has_key('staff_id'):
@@ -4816,17 +4818,17 @@ def create_saleorder(request):
 
     )
 
-    if payment == 'check':
+    if payment == 'Cheque':
       sale.checkno = request.POST.get('checkno')
-    elif payment == 'upi':
+    elif payment == 'UPI':
       sale.UPI = request.POST.get('upiid')
-    elif payment != 'check' and payment != 'upi 'and payment != 'cash':
+    elif payment != 'Cheque' and payment != 'UPI 'and payment != 'Cash':
       sale.accno = request.POST.get('accno')
     
-    if pos == 'state':
+    if pos == 'State':
       sale.CGST=request.POST.get('cgst')
       sale.SGST=request.POST.get('sgst')
-    elif pos == 'other state':
+    elif pos == 'Other state':
       sale.IGST=request.POST.get('igst')
 
     sale.save()
@@ -4865,7 +4867,7 @@ def create_saleorder(request):
         salesorderAdd.save()
         print("item saved===================================")
       
-      tran= sale_transaction(
+      tran= saleorder_transaction(
         sales_order=salesorderid,staff=staff,company=cmp,action="Created",date=date.today()
       )
       tran.save()
@@ -4914,10 +4916,11 @@ def import_excel(request):
       print("open============================================")
       excel_file = request.FILES['file']
       if excel_file.name.endswith('.xlsx'):
+        print("open1111111111111111111111")
         df = pd.read_excel(excel_file, engine='openpyxl')
         for index, row in df.iterrows():
           print(row['PARTY NAME'])
-          salesorder.objects.create(
+          s = salesorder(
                     partyname=row['PARTY NAME'],
                     orderno=row['NUMBER'],
                     orderdate=row['DATE'],
@@ -4930,6 +4933,11 @@ def import_excel(request):
                     comp=staff.company,
                     # Add other fields accordingly
                 )
+          s.save()
+          tran= saleorder_transaction(
+            sales_order=s,staff=staff,company=staff.company,action="Created",date=date.today()
+            )
+          tran.save()
         print("success============================================")
         return redirect('sale_order')  # Redirect to a success page
       print("end===========================")
@@ -4938,8 +4946,9 @@ def import_excel(request):
   
 def add_party(request):
   if request.method == 'POST':
-        Company = company.objects.get(user=request.user)
-        user_id = request.user.id
+        print("sub===========================")
+        staff_id = request.session['staff_id']
+        staff =  staff_details.objects.get(id=staff_id)
         
         party_name = request.POST['partyname']
         gst_no = request.POST['gstno']
@@ -4956,8 +4965,7 @@ def add_party(request):
         additionalfield1 = request.POST['additionalfield1']
         additionalfield2 = request.POST['additionalfield2']
         additionalfield3 = request.POST['additionalfield3']
-        user=User.objects.get(id=user_id)
-        comp=Company
+       
         if (
           not party_name
           
@@ -4965,21 +4973,27 @@ def add_party(request):
           return render(request, 'add_parties.html')
 
         part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
-                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=user,company=comp)
-        part.save() 
+                       creditlimit=creditlimit,current_date=current_date,End_date=End_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,user=staff.company.user,company=staff.company)
+        part.save()  
+        print("===========saved")
 
         options = {}
-        option_objects = party.objects.filter(user=request.user)
+        option_objects = party.objects.filter(company=staff.company)
         for option in option_objects:
             options[option.id] = [option.party_name]
+        print("===========get")
         return JsonResponse(options) 
   else:
     return JsonResponse({'error': 'Invalid request'}, status=400)
   
 def add_item(request):
   if request.method=='POST':
-    user = User.objects.get(id=request.user.id)
-    company_user_data = company.objects.get(user=request.user.id)
+    staff_id = request.session['staff_id']
+    staff =  staff_details.objects.get(id=staff_id)
+    # user= request.user
+    # user = User.objects.get(id=user.id)
+    # company_user_data = company.objects.get(user=request.user)
+    cmp= staff.company
     item_name = request.POST.get('item_name')
     item_hsn = request.POST.get('item_hsn')
     item_unit = request.POST.get('item_unit')
@@ -5000,8 +5014,8 @@ def add_item(request):
     item_min_stock_maintain = request.POST.get('item_min_stock_maintain')
     if item_min_stock_maintain == ''  or None:
       item_min_stock_maintain = 0
-    item_data = ItemModel(user=user,
-                          company=company_user_data,
+    item_data = ItemModel(user=cmp.user,
+                          company=cmp,
                           item_name=item_name,
                           item_hsn=item_hsn,
                           item_unit=item_unit,
@@ -5017,7 +5031,7 @@ def add_item(request):
                           item_min_stock_maintain=item_min_stock_maintain)
     item_data.save()
     options = {}
-    option_objects = ItemModel.objects.filter(user=request.user)
+    option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
     for option in option_objects:
       options[option.id] = [option.item_name]
     return JsonResponse(options) 
@@ -5032,18 +5046,18 @@ def sales_transaction(request,id):
     else:
       return redirect('/')
   staff =  staff_details.objects.get(id=staff_id)  
-  tr= sale_transaction.objects.filter(sales_order=id)
-  context={'tr':tr,'staff':staff}
-  return render(request,'sale_transaction.html',context)
+  tr= saleorder_transaction.objects.filter(sales_order=id)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
 
+  
+  context={'tr':tr,'staff':staff,'allmodules':allmodules}
+  return render(request,'company/sale_transaction.html',context)
 
+# @login_required(login_url='login')
 def saleorder_edit(request,id):
-  if 'staff_id' in request.session:
-    if request.session.has_key('staff_id'):
-      staff_id = request.session['staff_id']
+  
+  staff_id = request.session['staff_id']
            
-    else:
-      return redirect('/')
   staff =  staff_details.objects.get(id=staff_id)
   sale = salesorder.objects.get(id=id)
   cmp = staff.company
@@ -5051,24 +5065,25 @@ def saleorder_edit(request,id):
   item = ItemModel.objects.filter(company=staff.company)
   sitem = sales_item.objects.filter(sale_order=sale)
   bnk = BankModel.objects.filter(company=cmp)
+  allmodules= modules_list.objects.get(company=staff.company,status='New')
+
   
   context={
-    'party':par,'item':item,'staff':staff,'bnk':bnk,'sale':sale,'sitem':sitem
+    'party':par,'item':item,'staff':staff,'bnk':bnk,'sale':sale,'sitem':sitem,
+    'allmodules':allmodules,
   }
-  return render(request, 'saleorder_edit.html',context)
+  return render(request, 'company/saleorder_edit.html',context)
 
 
 
 
-@login_required(login_url='login')
+
 def edit_saleorder(request,id):
-  if 'staff_id' in request.session:
-    if request.session.has_key('staff_id'):
-      staff_id = request.session['staff_id']
-           
-    else:
-      return redirect('/')
+  print("===========11111111111111111")
+  staff_id = request.session['staff_id']
   staff =  staff_details.objects.get(id=staff_id)
+  print("===========2222222")
+
   if request.method == 'POST':
     so = salesorder.objects.get(id=id)
     
@@ -5077,28 +5092,31 @@ def edit_saleorder(request,id):
     so.orderno=request.POST.get('orderno')
     so.orderdate=request.POST.get('orderdate')
     so.duedate=request.POST.get('duedate')
-    
+    print(so.partyname)
+
     pos=request.POST.get('stateofsply')
     if pos != '':
       so.placeofsupply=pos
-      if pos == 'state':
+      if pos == 'State':
         so.CGST=request.POST.get('cgst')
         so.SGST=request.POST.get('sgst')
-      elif pos == 'other state':
+      elif pos == 'Other state':
         so.IGST=request.POST.get('igst')
       
     payment = request.POST.get('paymethode')
     if payment != '':
       so.payment_method=payment
-      if payment == 'check':
+      if payment == 'Cheque':
         so.checkno = request.POST.get('checkno')
-      elif payment == 'upi':
+      elif payment == 'UPI':
         so.UPI = request.POST.get('upiid')
-      elif payment != 'check' and payment != 'upi 'and payment != 'cash':
+      elif payment != 'Cheque' and payment != 'UPI 'and payment != 'Cash':
         so.accno = request.POST.get('accno')
         
-    if request.FILES.get('attach') != '':
-      so.file=request.FILES.get('attach')    
+    if request.FILES.get('attach') is not None:
+      new_file = request.FILES.get('attach')
+      so.file = new_file
+    
     so.note=request.POST.get('note')
     so.subtotal=request.POST.get('subtotal')
     so.taxamount=request.POST.get('taxamount')
@@ -5147,7 +5165,7 @@ def edit_saleorder(request,id):
             )
         salesorderAdd.save()
       
-    tran= sale_transaction.objects.create(
+    tran= saleorder_transaction.objects.create(
       sales_order=salesorderid,staff=staff,company=staff.company,action="Updated",date=date.today()
     )
     # tran.save()
@@ -5168,6 +5186,7 @@ def saleorderto_invoice(request,id):
   staff =  staff_details.objects.get(id=staff_id)
   company_instance = company.objects.get(id=staff.company.id)
   sale = salesorder.objects.get(id=id)
+  itm = sales_item.objects.filter(sale_order=sale)
   par= party.objects.get(party_name=sale.partyname)
   Party=party.objects.filter(company=company_instance)
   item=ItemModel.objects.filter(company=company_instance)
@@ -5178,10 +5197,116 @@ def saleorderto_invoice(request,id):
         next_count = invoice_count+1
   else:
         next_count=1
+  
+  context = {'staff':staff,'Party':Party,'item':item,
+             'bank':bank,'allmodules':allmodules,'sale':sale,
+             'next_count':next_count,'par':par,'itm':itm}
 
 
-  return render(request, 'company/saleorderto_invoice.html',{'staff':staff,'Party':Party,'item':item,'bank':bank,'allmodules':allmodules,'sale':sale,'next_count':next_count,'par':par})
+  return render(request, 'company/saleorderto_invoice.html',context)
 
+
+
+
+def saleorder_convert(request, sid):
+  if 'staff_id' in request.session:
+    staff_id = request.session['staff_id']
+  else:
+    return redirect('/')
+  staff = staff_details.objects.get(id=staff_id)
+  company_instance = staff.company       
+  party_name = request.POST.get('partyname')
+  contact = request.POST.get('contact')
+  address = request.POST.get('address')
+  invoice_no = request.POST.get('invoiceno')
+  date = request.POST.get('date')
+  state_of_supply = request.POST.get('state_of_supply')
+  paymenttype = request.POST.get('bank')
+  cheque = request.POST.get('chequeNumber')
+  upi = request.POST.get('upiNumber')
+  accountno = request.POST.get('accountNumber')
+  item = request.POST.getlist('item[]')
+  hsn = request.POST.getlist('hsn[]')
+  quantity = request.POST.getlist('quantity[]')
+  rate = request.POST.getlist('rate[]')
+  discount = request.POST.getlist('discount[]')
+  tax = request.POST.getlist('tax[]')
+  totalamount = request.POST.getlist('amount[]')
+  description = request.POST.get('description')
+  subtotal = request.POST.get('subtotal')
+  igst = request.POST.get('igst')
+  cgst = request.POST.get('cgst')
+  sgst = request.POST.get('sgst')
+  total_taxamount = request.POST.get('total_taxamount')
+  adjustment = request.POST.get('adjustment')
+  grandtotal = request.POST.get('grandtotal')
+  paidoff = request.POST.get('paidoff')
+  totalbalance = request.POST.get('totalbalance')
+  
+  print(total_taxamount)
+
+  party_instance=party.objects.get(party_name=party_name)
+        
+      
+  sales_invoice = SalesInvoice(
+    staff=staff,
+    company=company_instance,
+    party=party_instance,
+    party_name=party_name,
+    contact=contact,
+    address=address,
+    invoice_no=invoice_no,
+    date=date,
+    state_of_supply=state_of_supply,
+    paymenttype=paymenttype,
+    cheque=cheque,
+    upi=upi,
+    accountno=accountno,
+    description=description,
+    total_taxamount=total_taxamount,
+    adjustment=adjustment,
+    grandtotal=grandtotal,
+    paidoff=paidoff,
+    totalbalance=totalbalance,
+    )
+  if state_of_supply == 'State':
+    sales_invoice.cgst=cgst
+    sales_invoice.sgst = sgst
+  elif state_of_supply == 'Other state':
+    sales_invoice.igst=igst
+  sales_invoice.save()
+
+  # tr_history = SalesInvoiceTransactionHistory(company=company_instance,
+  #                                             staff=staff,      
+  #                                             salesinvoice=sales_invoice,
+  #                                             action="CREATED",
+  #                                             done_by_name=staff.first_name,
+  #                                             )
+  # tr_history.save()
+
+  sale = salesorder.objects.get(id=sid)
+  sale.status= 'order completed'
+  sale.action = 'converted to invoice'
+  sale.save()
+  
+  invoice = SalesInvoice.objects.get(id=sales_invoice.id)
+
+  if len(item)==len(hsn)==len(quantity)==len(rate)==len(discount)==len(tax)==len(totalamount):
+          mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
+          mapped=list(mapped)
+          for ele in mapped:
+            itm = ItemModel.objects.get(id=ele[0])
+            SalesInvoiceItem.objects.create(item = itm,hsn=ele[1], quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=invoice,company=company_instance)
+          return redirect('sale_order')
+
+  return redirect('sale_order')
+
+
+
+
+
+
+  # antony==================================================
 
 def editsave_salesinvoice(request,id):
 
@@ -5249,6 +5374,93 @@ def editsave_salesinvoice(request,id):
         return redirect('view_salesinvoice')
 
     return render(request, 'company/edit_salesinvoice.html')
+  
+  
+
+  
+def item_invoicedropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  options = {}
+  option_objects = ItemModel.objects.filter(company=cmp)
+  for option in option_objects:
+      options[option.id] = [option.item_name]
+  return JsonResponse(options)
+  
+def salesinvoice_save_parties(request):
+    if request.method == 'POST':
+        if 'staff_id' in request.session:
+            staff_id = request.session['staff_id']
+        else:
+            return redirect('/')
+
+        staff = staff_details.objects.get(id=staff_id)
+        company_instance = staff.company 
+        
+        party_name = request.POST['partyname']
+        gst_no = request.POST['gstin']
+        contact = request.POST['partyphno']
+        gst_type = request.POST['modalgsttype']
+        state = request.POST['splystate']
+        address = request.POST['baddress']
+        email = request.POST['partyemail']
+        openingbalance = request.POST.get('openbalance', '')
+        payment = request.POST.get('paymentType', '')
+        creditlimit = request.POST.get('crd_lmt', '')
+        current_date = request.POST['partydate']
+        additionalfield1 = request.POST['additional1']
+        additionalfield2 = request.POST['additional2']
+        additionalfield3 = request.POST['additional3']
+        comp=company_instance
+        if (
+          not party_name
+          
+      ):
+          return render(request, 'add_salesinvoice.html')
+
+        part = party(party_name=party_name, gst_no=gst_no,contact=contact,gst_type=gst_type, state=state,address=address, email=email, openingbalance=openingbalance,payment=payment,
+                       creditlimit=creditlimit,current_date=current_date,additionalfield1=additionalfield1,additionalfield2=additionalfield2,additionalfield3=additionalfield3,company=comp)
+        part.save() 
+
+        return redirect('add_salesinvoice')
+
+    return render(request, 'company/add_salesinvoice.html')
+  
+  
+def item_save_invoice(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+
+  name = request.POST['name']
+  unit = request.POST['unit']
+  hsn = request.POST['hsn']
+  taxref = request.POST['taxref']
+  sell_price = request.POST['sell_price']
+  cost_price = request.POST['cost_price']
+  intra_st = request.POST['intra_st']
+  inter_st = request.POST['inter_st']
+
+  if taxref != 'Taxable':
+    intra_st = 'GST0[0%]'
+    inter_st = 'IGST0[0%]'
+
+  itmdate = request.POST.get('itmdate')
+  stock = request.POST.get('stock')
+  itmprice = request.POST.get('itmprice')
+  minstock = request.POST.get('minstock')
+
+  if not hsn:
+    hsn = None
+
+  itm = ItemModel(item_name=name, item_hsn=hsn,item_unit=unit,item_taxable=taxref, item_gst=intra_st,item_igst=inter_st, item_sale_price=sell_price, 
+                item_purchase_price=cost_price,item_opening_stock=stock,item_current_stock=stock,item_at_price=itmprice,item_date=itmdate,
+                item_min_stock_maintain=minstock,company=cmp,user=cmp.user)
+  itm.save() 
+  return JsonResponse({'success': True})
+  
   
   
   

@@ -381,7 +381,7 @@ class salesorder(models.Model):
     @classmethod
     def next_orderno(cls):
         last_orderno = cls.objects.aggregate(Max('orderno'))['orderno__max']
-        return 111111 if last_orderno is None else last_orderno + 1
+        return 1 if last_orderno is None else last_orderno + 1
     
     
     
@@ -400,12 +400,13 @@ class sales_item(models.Model):
     tax = models.CharField(max_length=100,null=True)
     
 
-class sale_transaction(models.Model):
+class saleorder_transaction(models.Model):
     sales_order = models.ForeignKey(salesorder,on_delete=models.CASCADE,blank=True,null=True)
     staff = models.ForeignKey(staff_details,on_delete=models.CASCADE,blank=True,null=True)
     company = models.ForeignKey(company,on_delete=models.CASCADE,blank=True,null=True)
     action = models.CharField(max_length=255,null=True)
     date = models.DateField(null=True)
+
 class SalesInvoice(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,null=True,blank=True)
     company = models.ForeignKey(company, on_delete=models.CASCADE,null=True,blank=True)
@@ -422,16 +423,14 @@ class SalesInvoice(models.Model):
     upi = models.CharField(max_length=255,null=True,blank=True)
     accountno = models.CharField(max_length=255,null=True,blank=True)
     description = models.TextField(max_length=255,null=True,blank=True)
-    subtotal = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    igst = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    cgst = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    sgst = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    total_taxamount = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    adjustment = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    grandtotal = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-    paidoff = models.IntegerField(default=0,null=True,blank=True)
-    totalbalance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00,null=True,blank=True)
-
+    igst = models.CharField(max_length=100,default=0, null=True)
+    cgst = models.CharField(max_length=100,default=0, null=True)
+    sgst = models.CharField(max_length=100,default=0, null=True)
+    total_taxamount = models.CharField(max_length=100,default=0)
+    adjustment = models.CharField(max_length=100,default=0)
+    grandtotal = models.FloatField(default=0, null=True)
+    paidoff = models.CharField(null=True,blank=True,max_length=255)
+    totalbalance = models.CharField(null=True,blank=True,max_length=255)
 
 class SalesInvoiceItem(models.Model):
     company = models.ForeignKey(company, on_delete=models.CASCADE,null=True,blank=True)

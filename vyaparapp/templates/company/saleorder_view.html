@@ -191,23 +191,23 @@
                                 </div>
                                 <div class="col-5"></div>
                                 <div class="col-3">
-                                    <a class="btn ml-4  p-0 ps-2 pe-2 ms-2" data-bs-toggle="dropdown"
+                                    <a class="btn ml-4  p-0 ps-2 pe-2 ms-2" data-bs-toggle="dropdown" title="share"
                                         aria-haspopup="true" aria-expanded="false" role="button"> <span><img
                                                 width="25px"
-                                                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSxaXpO0ds4rBnFEeLuNZLBNPKSqEGvuTkqwjJBGp2G0D_OU4LWqEvFzUuRqlTx9f4J6yg&usqp=CAU"
+                                                src="{% static 'images/shareimg.png' %}"
                                                 alt="no img"></span></a>
                                     <div class="dropdown-menu" id="myDropdown">
                                         <ul>{% post_to_whatsapp object_or_url "WhatsApp" %}</ul>
                                         <ul>{% send_email object.title "{{object.title}}" object_or_url "Email" %}</ul>
                                     </div>
-                                    <a class="btn ml-4" id="pdflink"><img width="25px"
-                                            src="https://www.freeiconspng.com/thumbs/pdf-icon-png/png-pdf-file-icon-8.png"
+                                    <a class="btn ml-4" id="pdflink"><img width="25px" title="pdf"
+                                            src="{% static 'images/pdfdownload.png' %}"
                                             alt="no img"></a>
 
 
                                     <a class="btn btn_print p-0 ps-2 pe-2 ms-3" title="print"
                                         onclick="printfun()"><span><img width="25px"
-                                                src="{% static 'assets/printer.jpg' %}" alt="no img"></span></a>
+                                                src="{% static 'assets/printer1.png' %}" alt="no img"></span></a>
 
                                     <!-- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <a class="btn ml-5" onclick="printfun()"><img width="30px" src="{% static 'assets/printer.jpg' %}" alt="no img"> <br>Print</a>
@@ -273,7 +273,7 @@
 
                                                                         <div class="fw-bold">Order No: <p
                                                                                 class="d-inline-block fs-8 text-info">
-                                                                                #{{ sale.orderno }}</p>
+                                                                                {{ sale.orderno }}</p>
                                                                         </div>
                                                                         
 
@@ -450,7 +450,7 @@
                                                         <div class="text-white" style="justify-content: space-between;align-items: center;display: flex;">
                                                             <div class="fw-bold mt-2">Order No: <p
                                                                 class="d-inline-block fs-8">
-                                                                #{{ sale.orderno }}</p>
+                                                                {{ sale.orderno }}</p>
                                                             </div>
                                                             <div class="text-right">
                                                             <p class="mb-0 mt-2">Order Date: <b>{{sale.orderdate }}</b></p>
@@ -791,8 +791,7 @@
                                     <div class="row" style="margin-top: 20%;" id="printslip">
                                         <div class="col-md-3"></div>
                                         <div class="col-md-6 ml-3">
-                                            <div class="card bg-white"
-                                                style="border: 1px dotted black; box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);">
+                                            <div class="card bg-white" style="border: 1px dotted black; box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);">
                                                 <div class="mt-2" style="text-align: center;">
                                                     <div class="text-center" style="font-size: 3vh; color: black;">
                                                         <b>{{sale.staff.company.company_name}} </b>
@@ -1097,7 +1096,7 @@
             var opt =
             {
                 margin: 1,
-                filename: 'PurchaseBill' + '.pdf',
+                filename: 'SalesOrder'+ '{{sale.orderno}}' + '.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2 },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', }
@@ -1109,34 +1108,7 @@
 </script>
 
 <script>
-    function generateAndShare() {
-        print1 = document.getElementById('whatToPrint1')
-        print2 = document.getElementById('whatToPrint2')
-        print3 = document.getElementById('whatToPrint3')
-        print4 = document.getElementById('slipdiv')
-
-        if (print1.style.display !== 'none') {
-            var contentToShare = document.getElementById('printdiv1').innerText;
-        }
-
-        if (print2.style.display !== 'none') {
-            var contentToShare = document.getElementById('printdiv2').innerText;
-        }
-
-        if (print3.style.display !== 'none') {
-            var contentToShare = document.getElementById('printdiv3').innerText;
-        }
-
-        if (print4.style.display !== 'none') {
-            var contentToShare = document.getElementById('printslip').innerText;
-        }
-
-        // Generate a WhatsApp sharing link
-        var whatsappLink = 'https://wa.me/9846588154' + encodeURIComponent(contentToShare);
-
-        // Open a new window or redirect to the WhatsApp link
-        window.open(whatsappLink, '_blank');
-    }
+    
     function printfun() {
         print4 = document.getElementById('slipdiv')
         if (print4.style.display !== 'none') {

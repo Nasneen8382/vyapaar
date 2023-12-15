@@ -68,14 +68,12 @@
         font-weight: 600;
     }
 
-    label,
-    .table .form-control,
-    .form-control {
-        font-size: 0.7rem;
-    }
-
-    .table th {
-        font-size: 0.82em;
+    
+    .selectize-input {
+        height: 5vh;
+        border-color: #54B4D3;
+        border-radius: 5px;
+        
     }
 </style>
 
@@ -111,7 +109,7 @@
                     </div>
                     <div class="bg-light bs p-4 rounded mb-5">
                         <div class="d-md-flex d-sm-block">
-                            <h5><strong class="fw-bolder">ADD SALE ORDER</strong></h5>
+                            <h5><strong class="fw-bolder">EDIT SALE ORDER</strong></h5>
                             <!-- <div class="form-check form-switch d-flex">
                             <label id="lbl1" class="form-check-label fw-bolder" for="flexSwitchCheckChecked">PRODUCTS</label>
                             <input class="form-check-input fs-5 ms-2 me-2" type="checkbox" role="switch" id="flexSwitchCheckChecked"
@@ -126,32 +124,14 @@
                             <script>
                                 $(document).ready(function () {
                                     var party = $('#partyin').val();
-                                    $.ajax({
-                                        type: "GET",
-                                        url: "{% url 'getparty' %}",
-                                        data: {
-                                            id: party
-                                        },
-                                        success: function (response) {
-                                            console.log(response.email)
-
-                                            $('#p_email').val(response.email);
-                                            $('#p_bal').text(response.balance);
-                                            if(response.payment == 'To Pay'){
-                                                $('#p_bal').css('color', 'red');
-                                            }
-                                            else{
-                                                $('#p_bal').css('color', 'green');
-                                            }
-                                        }
-                                    });
+                                    partydetails(party);
                                     var selectedOption = $('#stateofsply').val();
-                                                if (selectedOption === 'other state') {
+                                                if (selectedOption === 'Other state') {
                                                     $('#igst1').show();
                                                     $('#cgst1').hide();
                                                     $('#sgst1').hide();
                                                 }
-                                                else if (selectedOption === 'state') {
+                                                else if (selectedOption === 'State') {
                                                     $('#igst1').hide();
                                                     $('#cgst1').show();
                                                     $('#sgst1').show();
@@ -193,13 +173,24 @@
                                         </div>
                                         <div class="col-sm-12 col-md-10 pb-4">
                                             <div class="d-flex pt-5">
-                                                <input style="color: black;background-color: white; " placeholder="PARTY NAME" name="party" list="party"
-                                                    class="form-control   border-secondary fw-bolder" id="partyin"  value="{{sale.partyname}}">
-                                                <datalist id="party">
-                                                    {% for i in party %}
-                                                    <option value="{{i.party_name}}">
+                                                <input style="color: black;background-color: white; "
+                                                    placeholder="PARTY NAME" name="party" list="party"
+                                                    class="form-control   border-secondary fw-bolder" id="partyin"
+                                                     data-bs-toggle="dropdown" aria-expanded="false" value="{{sale.partyname}}">
+                                                <div class="dropdown-menu p-1"
+                                                    style="box-shadow: 2px 2px 10px 3px rgba(0, 0, 0, 0.397);">
+                                                    <table id="partytbl">
+                                                        {% for i in party %}
+                                                        <tr class="py-0 my-0"
+                                                            onclick="selectParty('{{ i.party_name }}')">
+                                                            <td>{{i.party_name}}</td>
+                                                        </tr>
                                                         {% endfor %}
-                                                </datalist>
+                                                    </table>
+                                                </div>
+                                                <button id="modal_closing" type="button" class="btn bg-secondary text-light ms-1"
+                                                    data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"><span
+                                                        class="fa fa-plus"></span></button>
                                                 <input style="color: black;background-color: white; " class="form-control  border-secondary ms-2 fw-bolder me-2"
                                                     type="text" placeholder="EMAIL" name="email" id="p_email">
                                                 <!-- <input style="color: black;" class="form-control  border-secondary ms-2 fw-bolder me-2"
@@ -207,9 +198,7 @@
                                                 <!-- <button class="btn bg-warning"><span class="fa fa-plus"></span></button> -->
                 
                                                 
-                                                <button id="modal_closing" type="button" class="btn bg-secondary text-light"
-                                                    data-bs-toggle="modal" data-bs-target="#exampleModal" data-bs-whatever="@mdo"><span
-                                                        class="fa fa-plus"></span></button>
+                                                
                                                         
                 
                                             </div>
@@ -220,7 +209,47 @@
                                                     <div class="fs-5" id="p_bal"></div>
                                                 </div>
                                             </div>
+                                            <script>
+                                                function partydetails(party) {
+                                                    $.ajax({
+                                                        type: "GET",
+                                                        url: "{% url 'getparty' %}",
+                                                        data: {
+                                                            id: party
+                                                        },
+                                                        success: function (response) {
+                                                            console.log(response.email)
 
+                                                            $('#p_email').val(response.email);
+                                                            $('#p_bal').text(response.balance);
+                                                            if (response.payment == 'To Pay') {
+                                                                $('#p_bal').css('color', 'red');
+                                                            }
+                                                            else {
+                                                                $('#p_bal').css('color', 'green');
+                                                            }
+                                                        }
+                                                    });
+                                                }
+                                                $(document).on('input', '#partyin', function () {
+                                                    var party = $('#partyin').val();
+                                                    partydetails(party);
+                                                });
+                                                function selectParty(partyName) {
+                                                    document.getElementById("partyin").value = partyName;
+                                                    var party = $('#partyin').val();
+                                                    partydetails(party)
+
+                                                }
+                                                jQuery(document).ready(function ($) {
+                                                    $("#partyin").on("keyup", function () {
+                                                        var value = $(this).val().toLowerCase();
+                                                        $("#partytbl  tr").filter(function () {
+                                                            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1);
+                                                        });
+                                                    });
+                                                });
+                                            </script>
 
                                             <div class="d-flex pt-5">
                                                 <div class="w-50 me-3">
@@ -251,8 +280,8 @@
                                                         style="color: black;background-color: white;"
                                                         class="form-control fw-normal border-secondary  fs-3">
                                                         <option value="{{sale.placeofsupply}}">{{sale.placeofsupply}}</option>
-                                                        <option value="state">state</option>
-                                                        <option value="other state">other State</option>
+                                                        <option value="State">State</option>
+                                                        <option value="Other state">Other State</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -264,36 +293,32 @@
                                                         style="color: black;background-color: white;"
                                                         class="form-control fw-normal border-secondary  fs-3">
                                                         <option value="{{sale.payment_method}}">{{sale.payment_method}}</option>
-                                                        <option value="cash">cash</option>
-                                                        <option value="check">check</option>
-                                                        <option value="upi">upi</option>
+                                                        <option value="Cash">Cash</option>
+                                                        <option value="Cheque">Cheque</option>
+                                                        <option value="UPI">UPI</option>
                                                         {% for i in bnk %}
                                                         <option value="{{i.id}}">{{i.bank_name}}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
-                                                {% if sale.payment_method == 'check' %}
                                                 <div class="w-50"id="check">
-                                                    <label class="tb fw-bold" for="">CHECK NO.</label><br>
+                                                    <label class="tb fw-bold" for="">CHEQUE NO.</label><br>
                                                     <input style="color: black;background-color: white;" id="checkno"
                                                         class="form-control fw-normal border-secondary  fs-3"
                                                         type="text" name="checkno" value="{{sale.checkno}}">
                                                 </div>
-                                                {% elif sale.payment_method == 'upi' %}
                                                 <div class="w-50 " id="upi">
                                                     <label class="tb fw-bold" for="">UPI ID</label><br>
                                                     <input style="color: black;background-color: white;" id="upiid"
                                                         class="form-control fw-normal border-secondary  fs-3"
                                                         type="text" name="upiid" value="{{sale.UPI}}">
                                                 </div>
-                                                {% elif sale.payment_method != 'upi' and  sale.payment_method != 'check' and  sale.payment_method != 'cash' %}
                                                 <div class="w-50 " style="display: none;" id="account">
                                                     <label class="tb fw-bold" for="">ACC NO.</label><br>
                                                     <input style="color: black;background-color: white;" id="accno"
                                                         class="form-control fw-normal border-secondary  fs-3"
                                                         type="text" name="accno" value="{{sale.accno}}">
                                                 </div>
-                                                {% endif %}
                                             </div>
 
                                         </div>
@@ -305,6 +330,26 @@
                                     <script>
                                        
                                         $(document).ready(function () {
+                                            var selectedOption = $('#paymethode').val();
+                                            if (selectedOption === 'Cheque') {
+                                                    $('#check').show();
+                                                    $('#upi').hide();
+                                                    $('#account').hide();
+                                                    $('#checkno').prop('required', true);
+                                                    $('#upiid').prop('required', false);
+                                                }
+                                                if (selectedOption === 'UPI') {
+                                                    $('#upi').show();
+                                                    $('#check').hide();
+                                                    $('#account').hide();
+                                                    $('#upiid').prop('required', true);
+                                                    $('#checkno').prop('required', false);
+                                                }
+                                                if (selectedOption != 'UPI' && selectedOption != 'Cheque' && selectedOption != 'Cash' ){
+                                                    $('#account').show();
+                                                    $('#upi').hide();
+                                                    $('#check').hide();
+                                                }
                                             $('#paymethode').change(function () {
 
                                                 $('#upi').hide();
@@ -312,21 +357,21 @@
                                                 $('#account').hide();
                                                 // Show the selected div based on the selected option
                                                 var selectedOption = $(this).val();
-                                                if (selectedOption === 'check') {
+                                                if (selectedOption === 'Cheque') {
                                                     $('#check').show();
                                                     $('#upi').hide();
                                                     $('#account').hide();
                                                     $('#checkno').prop('required', true);
                                                     $('#upiid').prop('required', false);
                                                 }
-                                                if (selectedOption === 'upi') {
+                                                if (selectedOption === 'UPI') {
                                                     $('#upi').show();
                                                     $('#check').hide();
                                                     $('#account').hide();
                                                     $('#upiid').prop('required', true);
                                                     $('#checkno').prop('required', false);
                                                 }
-                                                if (selectedOption != 'upi' && selectedOption != 'check' && selectedOption != 'cash' ){
+                                                if (selectedOption != 'UPI' && selectedOption != 'Cheque' && selectedOption != 'Cash' ){
                                                     $('#account').show();
                                                     $('#upi').hide();
                                                     $('#check').hide();
@@ -351,12 +396,12 @@
 
 
                                                 var selectedOption = $(this).val();
-                                                if (selectedOption === 'other state') {
+                                                if (selectedOption === 'Other state') {
                                                     $('#igst1').show();
                                                     $('#cgst1').hide();
                                                     $('#sgst1').hide();
                                                 }
-                                                else if (selectedOption === 'state') {
+                                                else if (selectedOption === 'State') {
                                                     $('#igst1').hide();
                                                     $('#cgst1').show();
                                                     $('#sgst1').show();
@@ -364,7 +409,34 @@
 
                                             });
                                         });
-                                        
+                                        $(document).ready(function () {
+        $('.product').selectize({
+            sortField: 'value',
+           
+            render: {
+                item: function (item, escape) {
+                    if (item.value === '') {
+                        return '';
+                    }
+                    return '<div>' + escape(item.text) + '</div>';
+                }
+            }
+        });
+    });
+    function productsearch(roinc) {
+        $(`#product${roinc}`).selectize({
+            sortField: 'value',
+            items: [''],
+            render: {
+                item: function (item, escape) {
+                    if (item.value === '') {
+                        return '';
+                    }
+                    return '<div>' + escape(item.text) + '</div>';
+                }
+            }
+        });
+    }
                                     </script>
 
                                     <div class="row">
@@ -373,8 +445,8 @@
                                             <br><br>
                                             <div class="row clearfix mx-1">
                                                 <div class="col-md-12 table-responsive-md mt-3">
-                                                    <table class="table table-bordered table-info  tb table-responsive"
-                                                        id="tab_logic">
+                                                    <table class="table table-bordered table-light  tb table-responsive"
+                                                        id="tab_logic" style="border: solid black 1px;">
                                                         <thead>
                                                             <tr>
                                                                 <th class="text-center">#</th>
@@ -400,7 +472,7 @@
                                                                         <select name='product[]' id="product{{forloop.counter}}"
                                                                             style="margin-right: 0.5em;"
                                                                             class="form-control product border-secondary">
-                                                                            <option value=" " selected>{{i.product.item_name}}
+                                                                            <option value="{{i.product.id}}" selected>{{i.product.item_name}}
                                                                             </option>
 
                                                                             {% for i in item %}
@@ -476,13 +548,13 @@
                                                             </tr>
                                                             {% endfor %}
                                                         </tbody>
-                                                        <tr>
+                                                        
+                                                    </table>
+<tr>
                                                             <td style="border: none;background: none;"><a
                                                                     class="btn btn-outline-secondary ml-1" role="button"
                                                                     id="add">+</a></td>
                                                         </tr>
-                                                    </table>
-
                                                 </div>
                                             </div>
                                             <div class="row clearfix calc" style="margin-top:20px">
@@ -604,17 +676,11 @@
                                                 <hr>
                                             </div>
                                             <div class="text-start mt-5 px-5">
-
-                                                <button id="" class="btn btn-primary bg-gradient  me-3" type="submit"
-                                                    name="save_and_next" value="save_and_next">SAVE AND NEXT</button>
                                                 <button
                                                     style="background-color: rgba(38, 76, 146, 0.842);border:rgba(38, 76, 146, 0.842) ;"
                                                     id="" class="btn btn-primary bg-gradient  me-3" type="submit"
                                                     name="save" value="save">SAVE</button>
-                                                <button
-                                                    style="background-color: rgba(3, 161, 252, 0.7);border:rgba(3, 161, 252, 0.7) ;"
-                                                    id="" class="btn btn-primary bg-gradient" type="reset" name="prev"
-                                                    value="prev">CANCEL</button>
+                                                
                                             </div>
                                         </div>
                                         <div class="col-sm-12 col-md-1">
@@ -1326,7 +1392,7 @@
 
 
             );
-
+            productsearch(roinc)
         });
         
         $(document).on('change', '.product', function () {
@@ -1354,10 +1420,10 @@
                     // document.getElementById('qtyspan'+n).innerHTML = data2;
                     document.getElementById('unit' + n).value = dataprice;
                     // document.getElementById('select_tax'+n).value = datagst;
-                    if (document.getElementById('stateofsply').value == 'state') {
+                    if (document.getElementById('stateofsply').value == 'State') {
                         document.getElementById('select_tax' + n).value = datagst;
                     }
-                    else if (document.getElementById('stateofsply').value == 'other state') {
+                    else if (document.getElementById('stateofsply').value == 'Other state') {
                         document.getElementById('select_tax' + n).value = dataigst;
                     }
 
@@ -1457,10 +1523,10 @@
             $('#sub_total').val(total.toFixed(2));
             $('#tax_amount').val(taxamount.toFixed(2));
 
-            if (sos === 'other state') {
+            if (sos === 'Other state') {
                 $('#igst').val(taxamount.toFixed(2));
             }
-            else if (sos === 'state') {
+            else if (sos === 'State') {
                 gst = taxamount / 2
                 d = 0
                 $('#igst').val(d.toFixed(2));
