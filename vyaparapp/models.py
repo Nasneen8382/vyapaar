@@ -348,7 +348,7 @@ class DeliveryChallanTransactionHistory(models.Model):
 
 
 class salesorder(models.Model):
-
+    party = models.ForeignKey(party, on_delete=models.CASCADE,null=True,blank=True)
     partyname = models.CharField(max_length=100,null=True)
     staff = models.ForeignKey(staff_details, on_delete=models.CASCADE,null=True,blank=True)
     comp = models.ForeignKey(company, on_delete=models.CASCADE,null=True,blank=True)
@@ -398,6 +398,7 @@ class sales_item(models.Model):
     total = models.IntegerField(default=0, null=True)
     discount = models.CharField(max_length=100,null=True)
     tax = models.CharField(max_length=100,null=True)
+    taxamount = models.CharField(max_length=100,null=True)
     
 
 class saleorder_transaction(models.Model):

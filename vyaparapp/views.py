@@ -4730,10 +4730,11 @@ def saleorder_create(request):
   allmodules= modules_list.objects.get(company=staff.company,status='New')
   # cmp = staff.company
   cmp = company.objects.get(id=staff.company.id)
-  par= party.objects.filter(company=cmp,user=cmp.user)
+  par= party.objects.filter(company=staff.company)
   item = ItemModel.objects.filter(company=staff.company)
   bnk = BankModel.objects.filter(company=cmp)
   order = salesorder.next_orderno()
+  
   
   context={
     'party':par,'item':item,'staff':staff,'order':order,'bnk':bnk,'allmodule':allmodules
@@ -4742,10 +4743,12 @@ def saleorder_create(request):
 
 
 def getparty(request):
+    print("=======================")
     p_id = request.GET.get('id')
     print(p_id)
-    par = party.objects.get(party_name=p_id)
-    data7 = {'email': par.email,'balance':par.openingbalance,'payment':par.payment}
+    par = party.objects.get(id=p_id)
+    print(par.party_name)
+    data7 = {'phone': par.contact,'balance':par.openingbalance,'payment':par.payment,'address':par.address}
     
     print(data7)
     return JsonResponse(data7)
@@ -4787,7 +4790,8 @@ def create_saleorder(request):
       return redirect('/')
   staff =  staff_details.objects.get(id=staff_id)
   if request.method == 'POST':
-    prty = request.POST.get('party')
+    prtyid = request.POST.get('party')
+    prty=party.objects.get(id=prtyid)
     # staff =  staff_details.objects.get(id=staff_id)
     cmp= staff.company
     payment = request.POST.get('paymethode')
@@ -4798,7 +4802,8 @@ def create_saleorder(request):
     print(request.POST.get('orderdate'))
 
     sale = salesorder(
-      partyname=prty,
+      party=prty,
+      partyname =prty.party_name,
       orderno=request.POST.get('orderno'),
       orderdate=request.POST.get('orderdate'),
       duedate=request.POST.get('duedate'),
@@ -4841,14 +4846,15 @@ def create_saleorder(request):
     tax = request.POST.getlist("tax1[]")
     discount = request.POST.getlist("discount[]")
     total = request.POST.getlist("total[]")
+    taxamount=request.POST.getlist("taxamount[]")
     salesorderid=salesorder.objects.get(id =sale.id)
     print(product)
     print(len(hsn))
     print(len(qty))
     print(len(price))
    
-    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total):
-      mapped = zip(product, hsn, qty, price, tax, discount, total)
+    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total)==len(taxamount):
+      mapped = zip(product, hsn, qty, price, tax, discount, total,taxamount)
       mapped = list(mapped)
       for ele in mapped:
         print(ele[0])
@@ -4861,6 +4867,7 @@ def create_saleorder(request):
           tax=ele[4],
           discount=ele[5],
           total=ele[6],
+          taxamount=ele[7],
           sale_order=salesorderid,
           cmp=staff.company
             )
@@ -4892,7 +4899,7 @@ def saleorder_view(request,id):
   sale = salesorder.objects.get(id=id)
   item = sales_item.objects.filter(sale_order=sale)
   s = salesorder.objects.all()
-  prty = party.objects.get(party_name=sale.partyname)
+  prty = party.objects.get(id=sale.party.id)
   
   context={
     'sale':sale,'item':item,'s':s,'prty':prty,'staff':staff
@@ -4902,7 +4909,10 @@ def saleorder_view(request,id):
 def delete_saleorder(request,id):
   sale = salesorder.objects.get(id=id)
   item = sales_item.objects.filter(sale_order=sale)
+  tran = saleorder_transaction.objects.filter(sales_order=sale)
   for i in item:
+    i.delete()
+  for i in tran:
     i.delete()
   sale.delete()
   return redirect('sale_order')
@@ -5137,6 +5147,7 @@ def edit_saleorder(request,id):
     tax = request.POST.getlist("tax1[]")
     discount = request.POST.getlist("discount[]")
     total = request.POST.getlist("total[]")
+    taxamount = request.POST.getlist("taxamount[]")
     # salesorderid=salesorder.objects.get(id =so.id)
     print(len(product))
     print(len(hsn))
@@ -5146,8 +5157,8 @@ def edit_saleorder(request,id):
     objects_to_delete = sales_item.objects.filter(sale_order=salesorderid)
     objects_to_delete.delete()
    
-    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total):
-      mapped = zip(product, hsn, qty, price, tax, discount, total)
+    if len(product)==len(hsn)==len(qty) ==len(price)==len(tax)==len(discount)==len(total)==len(taxamount):
+      mapped = zip(product, hsn, qty, price, tax, discount, total,taxamount)
       mapped = list(mapped)
       for ele in mapped:
         print(ele[0])
@@ -5160,6 +5171,7 @@ def edit_saleorder(request,id):
           tax=ele[4],
           discount=ele[5],
           total=ele[6],
+          taxamount=ele[7],
           sale_order=salesorderid,
           cmp=staff.company
             )
@@ -5276,13 +5288,13 @@ def saleorder_convert(request, sid):
     sales_invoice.igst=igst
   sales_invoice.save()
 
-  # tr_history = SalesInvoiceTransactionHistory(company=company_instance,
-  #                                             staff=staff,      
-  #                                             salesinvoice=sales_invoice,
-  #                                             action="CREATED",
-  #                                             done_by_name=staff.first_name,
-  #                                             )
-  # tr_history.save()
+  tr_history = SalesInvoiceTransactionHistory(company=company_instance,
+                                              staff=staff,      
+                                              salesinvoice=sales_invoice,
+                                              action="CREATED",
+                                              done_by_name=staff.first_name,
+                                              )
+  tr_history.save()
 
   sale = salesorder.objects.get(id=sid)
   sale.status= 'order completed'

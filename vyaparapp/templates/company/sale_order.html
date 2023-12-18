@@ -9,12 +9,43 @@
 
 
 <style>
-    .table,
-    .form-control,
-    label,
-    .btn {
-        /* font-size: 0.8em; */
+   @media print{
+        body{
+            visibility: hidden !important; /* hide everything in body when in print mode*/
+        }
+
+        .printContainer {
+            visibility: visible !important; /* Override the rule above to only show the printables*/
+            position: absolute;
+            z-index: 99999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            font-size: large;
+        } 
+
+        #calcdiv{
+            visibility: visible;
+            margin-top: -30vh;
+            margin-left: -9vh;
+            margin-bottom: 30vh;
+        }
+
+        #billtable{
+            margin-top: 20vh;
+            margin-bottom: 20vh;
+        }
+
+        #billtable th{
+            font-size: medium;
+        }
+
+        .extra{
+            display: none;
+        }
     }
+    
 
     table tr td:hover {
         cursor: pointer;
@@ -483,17 +514,20 @@
             });
         });
         $(document).on('click', '.btn_print', function (event) {
-            $('#myTable').removeClass('table-hover');
+            // $('#myTable').removeClass('table-hover');
             var printContents = document.getElementById("content-div").innerHTML;
-            var originalContents = document.body.innerHTML;
+            var $printerDiv = $('<div class="printContainer" id=printContainer></div>');
+        $printerDiv.html(printContents); 
+        $('body').append($printerDiv).addClass("printingContent"); 
+        var h1Element = document.createElement("h1");
+        h1Element.textContent = "Sales Order";
+        var head = document.getElementById("printContainer");
+        head.insertBefore(h1Element, head.firstChild);
+        window.print();
+        $printerDiv.remove();
+        $('body').removeClass("printingContent");
 
-            document.body.innerHTML = printContents;
-
-            window.print();
-
-            document.body.innerHTML = originalContents;
-
-            $('#myTable').addClass('table-hover');
+            // $('#myTable').addClass('table-hover');
 
         });
     });
