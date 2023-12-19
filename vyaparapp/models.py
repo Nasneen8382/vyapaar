@@ -379,10 +379,10 @@ class salesorder(models.Model):
     action = models.CharField(max_length=100,default='convert to invoice')
 
     @classmethod
-    def next_orderno(cls):
-        last_orderno = cls.objects.aggregate(Max('orderno'))['orderno__max']
+    def next_orderno(cls, company_id):
+        last_orderno = cls.objects.filter(comp_id=company_id).aggregate(Max('orderno'))['orderno__max']
         return 1 if last_orderno is None else last_orderno + 1
-    
+
     
     
 class sales_item(models.Model):

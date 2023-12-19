@@ -157,9 +157,15 @@
 
                 }
             </script>
-
+<script>
+    jQuery(document).ready(function($) {
+        $(".clickable-row").click(function() {
+            window.location = $(this).data("href");
+        });
+    });
+</script>
             <div class="row pt-0 m-0">
-                <div class="card p-0 bg-light" style="min-height: 60vh;">
+                <div class="card p-0 bg-light" >
                     <div class="row m-0 p-0 pt-3">
                         <div class="col-sm-12 col-lg-3">
                             <p class="tb fs-5 fw-bolder pt-2">SALE ORDER</p>
@@ -186,8 +192,8 @@
 
                             </div>
                         </div>
-                        <div class="mt-3" id="content-div">
-                            <table class="table table-bordered table-info table-striped fs-3 tb table-responsive w-100" id="myTable"  style="text-align: center;">
+                        <div class="mt-3" id="content-div"  style="overflow-x: auto;">
+                            <table class="table table-bordered table-info table-striped fs-3 tb table-responsive w-100" id="myTable">
                                 <thead >
                             <!-- <table id="myTable"
                                 class="table table-bordered table-light table-hover  tb table-responsive w-100"> -->
@@ -209,7 +215,7 @@
                                             </div>
                                         </div>
                                      </th>
-                                     <th class="bg-secondary text-white">
+                                     <th class="bg-secondary text-white" >
                                         NUMBER
                                         <a class="text-white text-right" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="fas fa-filter filter-button"></i>
@@ -315,7 +321,7 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="bg-secondary text-white">TRANSACTION
+                                    <th class="bg-secondary text-white hideon-print">TRANSACTION
                                         <a class="text-white text-right" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="fas fa-filter filter-button"></i>
                                         </a> 
@@ -328,7 +334,7 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="bg-secondary text-white">BY
+                                    <th class="bg-secondary text-white hideon-print">BY
                                         <a class="text-white text-right" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="fas fa-filter filter-button"></i>
                                         </a> 
@@ -341,27 +347,30 @@
                                             </div>
                                         </div>
                                     </th>
-                                    <th class="bg-secondary text-white"></th>
+                                    <th class="bg-secondary text-white hideon-print"></th>
                                 </tr>
                                 </thead>
                                 <tbody>
                                     {% for i in sale %}
                                     <tr>
-                                        <td>{{forloop.counter }}</td>
-                                        <td>{{i.partyname}}</td>
-                                        <td>{{i.orderno}}</td>
-                                        <td>{{i.orderdate}}</td>
-                                        <td>{{i.duedate}}</td>
-                                        <td>{{i.grandtotal}}</td>
-                                        <td>{{i.balance}}</td>
-                                        <td>sale order</td>
+
+                                        <td class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{forloop.counter }}</td>
+                                        <td class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.partyname}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.orderno}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.orderdate}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.duedate}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.grandtotal}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">{{i.balance}}</td>
+                                        <td  class="clickable-row" data-href="saleorder_view/{{ i.id }}">sale order</td>
                                         <td
-                                            class="{% if i.status == 'open' %}text-primary{% else %}text-success{% endif %} text-center">
+                                            class="{% if i.status == 'open' %}text-primary{% else %}text-success{% endif %} text-center clickable-row"
+                                            data-href="saleorder_view/{{ i.id }}">
                                             {{i.status}}</td>
                                         <td><a href="{% url 'saleorderto_invoice' i.id %}">{{i.action}}</a> </td>
-                                        <td class="{% if i.last == 'Created' %}text-danger{% else %}text-success{% endif %} w-5">{{i.last}}</td>
-                                        <td>{{i.by.first_name}} {{i.by.last_name}}</td>
-                                        <td>
+                                        <td class="{% if i.last == 'Created' %}text-danger{% else %}text-success{% endif %} w-5 clickable-row hideon-print" 
+                                            data-href="saleorder_view/{{ i.id }}">{{i.last}}</td>
+                                        <td  class="clickable-row hideon-print" data-href="saleorder_view/{{ i.id }}">{{i.by.first_name}} {{i.by.last_name}}</td>
+                                        <td class="hideon-print">
                                             <div class="btn-group mb-1">
                                                 <button style="border: none;background: none;" type="button"
                                                     class="ropdown-toggle dropdown-toggle-split"
@@ -514,22 +523,22 @@
             });
         });
         $(document).on('click', '.btn_print', function (event) {
-            // $('#myTable').removeClass('table-hover');
-            var printContents = document.getElementById("content-div").innerHTML;
-            var $printerDiv = $('<div class="printContainer" id=printContainer></div>');
-        $printerDiv.html(printContents); 
-        $('body').append($printerDiv).addClass("printingContent"); 
-        var h1Element = document.createElement("h1");
-        h1Element.textContent = "Sales Order";
-        var head = document.getElementById("printContainer");
-        head.insertBefore(h1Element, head.firstChild);
-        window.print();
-        $printerDiv.remove();
-        $('body').removeClass("printingContent");
+    var printContents = $("#content-div").clone(); // Clone the content-div to avoid modifying the original content
+    printContents.find('.hideon-print').remove(); // Remove columns by class name
 
-            // $('#myTable').addClass('table-hover');
+    var $printerDiv = $('<div class="printContainer" id=printContainer></div>');
+    $printerDiv.html(printContents.html());
+    $('body').append($printerDiv).addClass("printingContent");
 
-        });
+    var h1Element = document.createElement("h1");
+    h1Element.textContent = "Sales Order";
+    var head = document.getElementById("printContainer");
+    head.insertBefore(h1Element, head.firstChild);
+    window.print();
+    $printerDiv.remove();
+    $('body').removeClass("printingContent");
+});
+
     });
 
     var table = document.getElementById("myTable");
@@ -540,8 +549,10 @@
         $('#in2').prop('min', function () {
             return fromDate
         });
-        var startDate = new Date(document.getElementById("in1").value);
+        var startDate = new Date(fromDate);
+         startDate.setHours(0, 0, 0, 0);
         var endDate = new Date(document.getElementById("in2").value);
+        endDate.setHours(23, 59, 59, 999);
         var rows = table.getElementsByTagName("tr")
 
         console.log(startDate);
@@ -549,12 +560,15 @@
             var row = rows[i];
             var dateCell = row.cells[3];
             var rowDate = new Date(dateCell.textContent);
+            rowDate.setHours(0, 0, 0, 0);
+            
 
-            if ((rowDate >= startDate) || (rowDate <= endDate && rowDate >= startDate)) {
+            if ((rowDate >= startDate) || (rowDate < endDate && rowDate >= startDate)) {
                 row.style.display = "";
 
             } else {
                 row.style.display = "none";
+                
 
             }
         }
@@ -573,18 +587,25 @@
             return toDate
         })
         var startDate = new Date(document.getElementById("in1").value);
+        var startDate = new Date(fromDate);
         var endDate = new Date(document.getElementById("in2").value);
+        endDate.setHours(23, 59, 59, 999);
         var rows = table.getElementsByTagName("tr");
 
         for (var i = 1; i < rows.length; i++) {
             var row = rows[i];
             var dateCell = row.cells[3];
             var rowDate = new Date(dateCell.textContent);
-            if (rowDate <= endDate && rowDate >= startDate) {
+            rowDate.setHours(0, 0, 0, 0);
+            console.log('end'+endDate);
+            console.log('row'+rowDate);
+
+            if (rowDate <= endDate) {
                 row.style.display = "";
 
             } else {
                 row.style.display = "none";
+                console.log("=============skip");
 
             }
         }

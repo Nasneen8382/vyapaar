@@ -4733,7 +4733,7 @@ def saleorder_create(request):
   par= party.objects.filter(company=staff.company)
   item = ItemModel.objects.filter(company=staff.company)
   bnk = BankModel.objects.filter(company=cmp)
-  order = salesorder.next_orderno()
+  order = salesorder.next_orderno(company_id=staff.company.id)
   
   
   context={
@@ -5097,8 +5097,10 @@ def edit_saleorder(request,id):
   if request.method == 'POST':
     so = salesorder.objects.get(id=id)
     
-    
-    so.partyname = request.POST.get('party')
+    prtyid=request.POST.get('party')
+    prty=party.objects.get(id=prtyid)
+    so.party=prty
+    so.partyname = prty.party_name
     so.orderno=request.POST.get('orderno')
     so.orderdate=request.POST.get('orderdate')
     so.duedate=request.POST.get('duedate')
@@ -5110,8 +5112,11 @@ def edit_saleorder(request,id):
       if pos == 'State':
         so.CGST=request.POST.get('cgst')
         so.SGST=request.POST.get('sgst')
+        so.IGST=''
       elif pos == 'Other state':
         so.IGST=request.POST.get('igst')
+        so.CGST= ''
+        so.SGST= ''
       
     payment = request.POST.get('paymethode')
     if payment != '':

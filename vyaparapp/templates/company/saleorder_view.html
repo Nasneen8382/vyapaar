@@ -204,6 +204,8 @@
                                     <a class="btn btn_print p-0 ps-2 pe-2 ms-3" title="print"
                                         onclick="printfun()"><span><img width="25px"
                                                 src="{% static 'assets/printer1.png' %}" alt="no img"></span></a>
+                                    <a  class="btn  p-0 ps-2 pe-2 ms-3" title="close" href="{% url 'sale_order'  %}"><span class="fa fa-times fs-5 p-1"></span></a>
+
 
                                     <!-- &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
                                     <a class="btn ml-5" onclick="printfun()"><img width="30px" src="{% static 'assets/printer.jpg' %}" alt="no img"> <br>Print</a>
@@ -363,7 +365,7 @@
                                                                             <td class="text-right" style="color: #000;">
                                                                                 {{sale.subtotal}}</td>
                                                                         </tr>
-                                                                        {% if sale.placeofsupply == 'state' %}
+                                                                        {% if sale.placeofsupply == 'State' %}
                                                                         <tr>
                                                                             <td style="color: #000;">CGST</td>
                                                                             <td style="color: #000;">:</td>
@@ -540,7 +542,7 @@
                                                                                 {{sale.subtotal}}</td>
                                                                         </tr>
 
-                                                                        {% if sale.placeofsupply != 'state' %}
+                                                                        {% if sale.placeofsupply != 'State' %}
                                                                         <tr>
                                                                             <td style="color: #000;">IGST</td>
                                                                             <td style="color: #000;">:</td>
@@ -711,7 +713,7 @@
                                                                         <td class="text-right" style="color: #000;">
                                                                             {{sale.subtotal}}</td>
                                                                     </tr>
-                                                                    {% if sale.placeofsupply != 'state' %}
+                                                                    {% if sale.placeofsupply != 'State' %}
                                                                     <tr>
                                                                         <td style="color: #000;">IGST</td>
                                                                         <td style="color: #000;">:</td>
@@ -900,7 +902,7 @@
                                                             {{ sale.subtotal }}
                                                         </div>
                                                     </div>
-                                                    {% if sale.placeofsupply != 'state' %}
+                                                    {% if sale.placeofsupply != 'State' %}
                                                     <div class="row ml-1">
                                                         <div class="col-md-5 text-left " style=" color: black;">
                                                             IGST
