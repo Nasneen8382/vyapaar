@@ -116,8 +116,7 @@ def estimate_quotation(request):
 def payment_in(request):
   return render(request, 'payment_in.html')
     
-def sale_order(request):
-  return render(request, 'sale_order.html')
+
 
 def delivery_chellan(request):
   return render(request, 'delivery_chellan.html')
@@ -4902,7 +4901,7 @@ def saleorder_view(request,id):
   prty = party.objects.get(id=sale.party.id)
   
   context={
-    'sale':sale,'item':item,'s':s,'prty':prty,'staff':staff
+    'sale':sale,'item':item,'s':s,'prty':prty,'staff':staff,'allmodules':allmodules
   }
   return render(request, 'company/saleorder_view.html',context)
 
@@ -4991,7 +4990,7 @@ def add_party(request):
         option_objects = party.objects.filter(company=staff.company)
         for option in option_objects:
             options[option.id] = [option.party_name]
-        print("===========get")
+       
         return JsonResponse(options) 
   else:
     return JsonResponse({'error': 'Invalid request'}, status=400)
@@ -5042,6 +5041,7 @@ def add_item(request):
     item_data.save()
     options = {}
     option_objects = ItemModel.objects.filter(company=cmp,user=cmp.user)
+    print("===========get")
     for option in option_objects:
       options[option.id] = [option.item_name]
     return JsonResponse(options) 
@@ -5204,8 +5204,9 @@ def saleorderto_invoice(request,id):
   company_instance = company.objects.get(id=staff.company.id)
   sale = salesorder.objects.get(id=id)
   itm = sales_item.objects.filter(sale_order=sale)
-  par= party.objects.get(party_name=sale.partyname)
-  Party=party.objects.filter(company=company_instance)
+  par= party.objects.get(id=sale.party.id)
+  Party=party.objects.filter(company=staff.company)
+  print(Party)
   item=ItemModel.objects.filter(company=company_instance)
   bank=BankModel.objects.filter(company=company_instance)
   allmodules= modules_list.objects.get(company=staff.company.id,status='New')
@@ -5232,7 +5233,8 @@ def saleorder_convert(request, sid):
     return redirect('/')
   staff = staff_details.objects.get(id=staff_id)
   company_instance = staff.company       
-  party_name = request.POST.get('partyname')
+  partyid = request.POST.get('partyname')
+  p= party.objects.get(id=partyid)
   contact = request.POST.get('contact')
   address = request.POST.get('address')
   invoice_no = request.POST.get('invoiceno')
@@ -5262,14 +5264,13 @@ def saleorder_convert(request, sid):
   
   print(total_taxamount)
 
-  party_instance=party.objects.get(party_name=party_name)
         
       
   sales_invoice = SalesInvoice(
     staff=staff,
     company=company_instance,
-    party=party_instance,
-    party_name=party_name,
+    party=p,
+    party_name=p.party_name,
     contact=contact,
     address=address,
     invoice_no=invoice_no,

@@ -54,9 +54,9 @@
 
                 <div class="d-flex mt-2">
                     <select style="color: black;" class="form-control border-secondary me-2" id="partySelect" name="partyname" required>
-                        <option value="{{sale.partyname}}" selected hidden>{{sale.partyname}}</option>
+                        <option value="{{sale.party.id}}" selected hidden>{{sale.party.party_name}}</option>
                         {% for i in Party %}
-                            <option value="{{ i.party_name }}">{{ i.party_name }}</option>
+                            <option value="{{ i.id }}">{{ i.party_name }}</option>
                         {% endfor %}
                     </select>
 
@@ -64,12 +64,12 @@
                    
                   
                     <input style="color: black;" class="form-control  bg-light ms-2 " type="number"
-                        placeholder="Phone No" autocomplete="off" name="contact" id="partyPhone" value="{{par.contact}}" readonly required>
+                        placeholder="Phone No" autocomplete="off" name="contact" id="partyPhone" value="{{sale.party.contact}}" readonly required>
                     <input style="color: black;" class="form-control  bg-light ms-2 " type="text"
-                        placeholder="Address" autocomplete="off" name="address" id="partyAddress" value="{{par.address}}" readonly required>
+                        placeholder="Address" autocomplete="off" name="address" id="partyAddress" value="{{sale.party.address}}" readonly required>
                 </div>
 
-                <label for="" id="partyBalance">Balance Amount:{{par.openingbalance}}</label>
+                <label for="" id="partyBalance">Balance Amount:{{sale.party.openingbalance}}</label>
 
                 <div class="d-flex mt-2">
                     <input id="invoiceInput" style="color: black; " class="form-control  bg-light fw-bolder"
@@ -89,6 +89,7 @@
 
                 <div class="d-flex mt-4">
                     <select style="color: black; width: 275px;" class="form-control bg-light me-2" id="bank" name="bank" onchange="updateBankDetails()" required>
+                        <option value="{{sale.payment_method}}">{{sale.payment_method}}</option>
                         <option value="Cash">Cash</option>
                         <option value="Cheque">Cheque</option>
                         <option value="UPI">UPI</option>
@@ -739,7 +740,6 @@
         // Initialize selectize
         var $select = $('#partySelect').selectize({
             sortField: 'value',
-            items: ['{{sale.partyname}}'], // Set the initial value
             render: {
                 item: function (item, escape) {
                     if (item.value === '') {

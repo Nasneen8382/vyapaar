@@ -1209,20 +1209,20 @@
 
                 success: function (data) {
                     document.getElementById("itemform").reset();
-                    // reloadCustomer();
+                    var table = document.getElementById('tab_logic');
+                    var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+                    for (var i = 1; i <= rows.length; i++) {
+                        var selectize = $(`#product${i}`)[0].selectize;
+                        selectize.clearOptions();
+                        selectize.addOption({ value: '', text: 'Select Product' });
+                        $.each(data, function (key, value) {
+                            selectize.addOption({ value: key, text: value[0] });
+                        });
 
-                    var dropdown = $('#product1');
-                    dropdown.empty();
-                    dropdown.append($('<option></option>'));
-                    $.each(data, function (key, value) {
-                        console.log(value)
-
-                        dropdown.append($('<option></option>').attr('value', key).text(value[0]));
-                    });
+                       selectize.refreshOptions(false);
+                    }
+                    
                     $("#newitem").modal("hide");
-                    // var modal1 = document.getElementById("myMod");
-                    // modal1.style.display = "none";
-
                 },
                 error: function (xhr, textStatus, errorThrown) {
                     console.error("Error:", textStatus, errorThrown);
@@ -1486,8 +1486,14 @@
 
         $(document).on('click', '.remove_row', function () {
             var row_id = $(this).attr("id");
-            console.log(row_id);
             $('#addr0' + row_id + '').remove();
+            var table = document.getElementById('tab_logic');
+            var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                 var cells = rows[i].getElementsByTagName('td');
+                cells[0].innerText = i + 1;
+            }
+
 
             calc_total();
         });
