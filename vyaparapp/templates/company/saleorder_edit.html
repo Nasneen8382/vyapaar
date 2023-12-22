@@ -1492,6 +1492,17 @@
             for (var i = 0; i < rows.length; i++) {
                  var cells = rows[i].getElementsByTagName('td');
                 cells[0].innerText = i + 1;
+                //Update the id attribute of each row
+                var oldId = rows[i].id;
+                var newId = 'addr0' + (i + 1);
+                rows[i].id = newId;
+
+                // Update the id attribute of any element within the row that has an id
+                $(rows[i]).find('[id]').each(function () {
+                    var elementId = $(this).attr('id');
+                    var newElementId = elementId.replace(/\d+/, i + 1);
+                    $(this).attr('id', newElementId);
+                });
             }
 
 

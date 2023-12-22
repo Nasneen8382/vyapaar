@@ -1395,12 +1395,15 @@
                 }
             }
         });
+        console.log("product"+roinc );
     }
     $(document).ready(function () {
 
         $('#add').click(function () {
             var roinc = $("#items-table-body tr").length;
             roinc++;
+            console.log("addd :  "+roinc);
+            
             $('#items-table-body').append(
 
 
@@ -1455,6 +1458,73 @@
             );
             productsearch(roinc)
         });
+        $(document).on('click', '.remove_row', function () {
+            var row_id = $(this).attr("id");
+            console.log("remove : "+row_id);
+            $('#addr0' + row_id + '').remove();
+
+
+            var table = document.getElementById('tab_logic');
+            var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                 var cells = rows[i].getElementsByTagName('td');
+                cells[0].innerText = i + 1;
+                // Update the id attribute of each row
+                var oldId = rows[i].id;
+                var newId = 'addr0' + (i + 1);
+                rows[i].id = newId;
+
+                // Update the id attribute of any element within the row that has an id
+                $(rows[i]).find('[id]').each(function () {
+                    var elementId = $(this).attr('id');
+                    var newElementId = elementId.replace(/\d+/, i + 1);
+                    $(this).attr('id', newElementId);
+                });
+            }
+
+            calc_total();
+        });
+        $(document).on('click', '.clone_row', function () {
+            var roinc = $("#items-table-body tr").length;
+            var originalRow = $(this).closest('#items-table-body tr');
+            var clonedRow = originalRow.clone();
+
+            clonedRow.attr('id', 'addr0' + (roinc + 1));
+
+            clonedRow.find('.nnum').text(roinc + 1);
+
+            clonedRow.find('[id]').each(function () {
+                var oldId = $(this).attr('id');
+                var newId = oldId.replace(/\d+/, roinc + 1);
+                console.log("newid : "+newId)
+                $(this).attr('id', newId);
+                // if ($(this).hasClass('product')) {
+                //     var selectize = $(this)[0].selectize;
+                //     selectize.settings.controlId = newId;
+                //     selectize.refreshOptions();
+                // }
+            });
+
+            clonedRow.find('.product').each(function () {
+                $(this).val(originalRow.find('.product').val());
+            });
+            clonedRow.find('.intra_tax').each(function () {
+                $(this).val(originalRow.find('.intra_tax').val());
+            });
+            clonedRow.find('.inter_tax').each(function () {
+                $(this).val(originalRow.find('.inter_tax').val());
+            });
+            originalRow.after(clonedRow);
+
+            var table = document.getElementById('tab_logic');
+            var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName('td');
+                cells[0].innerText = i + 1;
+            }
+            calc_total();
+
+        });
 
         $(document).on('change', '.product', function () {
 
@@ -1503,52 +1573,11 @@
             // });
         });
 
-        $(document).on('click', '.remove_row', function () {
-            var row_id = $(this).attr("id");
-            $('#addr0' + row_id + '').remove();
-            var table = document.getElementById('tab_logic');
-            var rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-            for (var i = 0; i < rows.length; i++) {
-                 var cells = rows[i].getElementsByTagName('td');
-                cells[0].innerText = i + 1;
-            }
-
-            calc_total();
-        });
-        $(document).on('click', '.clone_row', function () {
-            var roinc = $("#items-table-body tr").length;
-            var originalRow = $(this).closest('#items-table-body tr');
-            var clonedRow = originalRow.clone();
-
-            clonedRow.attr('id', 'addr0' + (roinc + 1));
-
-            clonedRow.find('.nnum').text(roinc + 1);
-
-            clonedRow.find('[id]').each(function () {
-                var oldId = $(this).attr('id');
-                var newId = oldId.replace(/\d+/, roinc + 1);
-                console.log(newId)
-                $(this).attr('id', newId);
-            });
-
-            clonedRow.find('.product').each(function () {
-                $(this).val(originalRow.find('.product').val());
-            });
-            clonedRow.find('.intra_tax').each(function () {
-                $(this).val(originalRow.find('.intra_tax').val());
-            });
-            clonedRow.find('.inter_tax').each(function () {
-                $(this).val(originalRow.find('.inter_tax').val());
-            });
-            originalRow.after(clonedRow);
-
-            calc_total();
-
-        });
+        
 
         //        
         // }
-
+        
 
         $(document).ready(function () {
             $(document).on('input', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc, #tab_logic tbody tr .seltax', function () {
@@ -1585,7 +1614,6 @@
         function calc_total() {
 
             var sos = $('#stateofsply').val();
-            console.log(sos);
             total = 0;
             $('.total').each(function () {
                 total += parseFloat($(this).val());
@@ -1618,7 +1646,7 @@
             gtot = taxamount + total+adj;
             // grand = gtot.toFixed(2);
             $('#grandtotal').val(gtot.toFixed(2));
-            console.log(gtot);
+            console.log("grand "+gtot);
             
             var bal=gtot-paid;
             $('#baldue').val(bal.toFixed(2));
@@ -1666,6 +1694,7 @@
 
         });
     });
+    
 
 </script>
 

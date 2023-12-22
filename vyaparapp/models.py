@@ -424,14 +424,16 @@ class SalesInvoice(models.Model):
     upi = models.CharField(max_length=255,null=True,blank=True)
     accountno = models.CharField(max_length=255,null=True,blank=True)
     description = models.TextField(max_length=255,null=True,blank=True)
+    subtotal = models.CharField(max_length=100,default=0, null=True)
     igst = models.CharField(max_length=100,default=0, null=True)
     cgst = models.CharField(max_length=100,default=0, null=True)
     sgst = models.CharField(max_length=100,default=0, null=True)
     total_taxamount = models.CharField(max_length=100,default=0)
-    adjustment = models.CharField(max_length=100,default=0)
+    adjustment = models.CharField(max_length=100,default=0, null=True)
     grandtotal = models.FloatField(default=0, null=True)
     paidoff = models.CharField(null=True,blank=True,max_length=255)
     totalbalance = models.CharField(null=True,blank=True,max_length=255)
+
 
 class SalesInvoiceItem(models.Model):
     company = models.ForeignKey(company, on_delete=models.CASCADE,null=True,blank=True)

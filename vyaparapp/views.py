@@ -22,6 +22,8 @@ from xhtml2pdf import pisa
 
 import pandas as pd
 
+from io import BytesIO
+from django.core.mail import send_mail, EmailMessage
 
 # Create your views here.
 def home(request):
@@ -5211,7 +5213,7 @@ def saleorderto_invoice(request,id):
   bank=BankModel.objects.filter(company=company_instance)
   allmodules= modules_list.objects.get(company=staff.company.id,status='New')
   if SalesInvoice.objects.filter(company=company_instance).exists():
-        invoice_count = SalesInvoice.objects.last().id
+        invoice_count = SalesInvoice.objects.last().invoice_no
         next_count = invoice_count+1
   else:
         next_count=1
@@ -5281,6 +5283,7 @@ def saleorder_convert(request, sid):
     upi=upi,
     accountno=accountno,
     description=description,
+    subtotal=subtotal,
     total_taxamount=total_taxamount,
     adjustment=adjustment,
     grandtotal=grandtotal,
@@ -5304,7 +5307,7 @@ def saleorder_convert(request, sid):
 
   sale = salesorder.objects.get(id=sid)
   sale.status= 'order completed'
-  sale.action = 'converted to invoice'
+  sale.action = 'converted to invoice no. '+sales_invoice.invoice_no
   sale.save()
   
   invoice = SalesInvoice.objects.get(id=sales_invoice.id)
@@ -5321,92 +5324,44 @@ def saleorder_convert(request, sid):
 
 
 
+def email_saleorder(request,id):
+  if request.method == 'POST':
+                emails_string = request.POST['email_ids']
 
+                # Split the string by commas and remove any leading or trailing whitespace
+                emails_list = [email.strip() for email in emails_string.split(',')]
+                email_message = request.POST['email_message']
+                print(emails_list)
+
+                sid = request.session.get('staff_id')
+                staff =  staff_details.objects.get(id=sid)
+                cmp = company.objects.get(id=staff.company.id) 
+                
+                sale = salesorder.objects.get(id=id,staff=staff)
+                saleitem= sales_item.objects.filter(sale_order=sale.id)
+               
+                        
+                context = {'sale':sale, 'cmp':cmp,'saleitem':saleitem}
+                template_path = 'company/saleorder_file_mail.html'
+                template = get_template(template_path)
+
+                html  = template.render(context)
+                result = BytesIO()
+                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+                pdf = result.getvalue()
+                filename = f'DEBIT NOTE - {pdebt.pdebitid}.pdf'
+                subject = f"DEBIT NOTE - {pdebt.pdebitid}"
+                email = EmailMessage(subject, f"Hi,\nPlease find the attached DEBIT NOTE - File-{pdebt.pdebitid}. \n{email_message}\n\n--\nRegards,\n{cmp.company_name}\n{cmp.address}\n{cmp.state} - {cmp.country}\n{cmp.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+                email.attach(filename, pdf, "application/pdf")
+                email.send(fail_silently=False)
+
+                msg = messages.success(request, 'Debit note file has been shared via email successfully..!')
+                return redirect(details_debitnote,id)
+  
 
 
   # antony==================================================
 
-def editsave_salesinvoice(request,id):
-
-    if request.method == 'POST':
-        
-        if 'staff_id' in request.session:
-            staff_id = request.session['staff_id']
-        else:
-            return redirect('/')
-
-        staff = staff_details.objects.get(id=staff_id)
-        company_instance = company.objects.get(id=staff.company.id)
-        sales_invoice=SalesInvoice.objects.get(id=id,company=company_instance,staff=staff)
-        
-        sales_invoice.party_name = request.POST.get('partyname')
-        sales_invoice.contact = request.POST.get('contact')
-        sales_invoice.address = request.POST.get('address')
-        sales_invoice.invoice_no = request.POST.get('invoiceno')
-        sales_invoice.date = request.POST.get('date')
-        sales_invoice.state_of_supply = request.POST.get('state_of_supply')
-        sales_invoice.paymenttype = request.POST.get('bank')
-        sales_invoice.cheque = request.POST.get('chequeNumber')
-        sales_invoice.upi = request.POST.get('upiNumber')
-        sales_invoice.accountno = request.POST.get('accountNumber')
-        sales_invoice.description = request.POST.get('description')
-        sales_invoice.subtotal = request.POST.get('subtotal')
-        sales_invoice.igst = request.POST.get('igst')
-        sales_invoice.cgst = request.POST.get('cgst')
-        sales_invoice.sgst = request.POST.get('sgst')
-        sales_invoice.total_taxamount = request.POST.get('total_taxamount')
-        sales_invoice.adjustment = request.POST.get('adjustment')
-        sales_invoice.grandtotal = request.POST.get('grandtotal')
-        sales_invoice.paidoff = request.POST.get('paidoff')
-        sales_invoice.totalbalance = request.POST.get('totalbalance')
-    
-        sales_invoice.save()
-
-        item = tuple(request.POST.getlist('item[]'))
-        hsn = tuple(request.POST.getlist('hsn[]'))
-        quantity = tuple(request.POST.getlist('quantity[]'))
-        rate = tuple(request.POST.getlist('rate[]'))
-        discount = tuple(request.POST.getlist('discount[]'))
-        tax = tuple(request.POST.getlist('tax[]'))
-        totalamount = tuple(request.POST.getlist('amount[]'))
-
-        SalesInvoiceItem.objects.filter(salesinvoice=sales_invoice,company=company_instance).delete()
-
-        if len(item) == len(hsn) == len(quantity) == len(rate) == len(discount) == len(tax) == len(totalamount):
-      
-            mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
-            mapped=list(mapped)
-            for ele in mapped:
-              itm = ItemModel.objects.get(id=ele[0])
-              SalesInvoiceItem.objects.create( hsn=ele[1],quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=sales_invoice,company=company_instance,item =itm,staff=staff)
-
-        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
-                                              staff=staff,      
-                                              salesinvoice=sales_invoice,
-                                              action="UPDATED",
-                                              done_by_name=staff.first_name,
-                                              )
-        tr_history.save()
-
-        
-        return redirect('view_salesinvoice')
-
-    return render(request, 'company/edit_salesinvoice.html')
-  
-  
-
-  
-def item_invoicedropdown(request):
-  sid = request.session.get('staff_id')
-  staff =  staff_details.objects.get(id=sid)
-  cmp = company.objects.get(id=staff.company.id)
-
-  options = {}
-  option_objects = ItemModel.objects.filter(company=cmp)
-  for option in option_objects:
-      options[option.id] = [option.item_name]
-  return JsonResponse(options)
-  
 def salesinvoice_save_parties(request):
     if request.method == 'POST':
         if 'staff_id' in request.session:
@@ -5444,9 +5399,7 @@ def salesinvoice_save_parties(request):
 
         return redirect('add_salesinvoice')
 
-    return render(request, 'company/add_salesinvoice.html')
-  
-  
+    return render(request, 'company/add_salesinvoice.html')  
 def item_save_invoice(request):
   sid = request.session.get('staff_id')
   staff =  staff_details.objects.get(id=sid)
@@ -5479,249 +5432,28 @@ def item_save_invoice(request):
   itm.save() 
   return JsonResponse({'success': True})
   
+def item_invoicedropdown(request):
+  sid = request.session.get('staff_id')
+  staff =  staff_details.objects.get(id=sid)
+  cmp = company.objects.get(id=staff.company.id)
+  product = ItemModel.objects.filter(company=cmp)
+
+  id_list = []
+  product_list = []
+  for p in product:
+    id_list.append(p.id)
+    product_list.append(p.item_name)
+  return JsonResponse({'id_list':id_list, 'product_list':product_list})   
   
-  
-  
-  # =======================================================================
-def add_salesinvoice(request):
-  if 'staff_id' in request.session:
-    if request.session.has_key('staff_id'):
-      staff_id = request.session['staff_id']
-           
-    else:
-      return redirect('/')
-  staff =  staff_details.objects.get(id=staff_id)
-  company_instance = company.objects.get(id=staff.company.id)
-
-  Party=party.objects.filter(company=company_instance)
-  item=ItemModel.objects.filter(company=company_instance)
-  allmodules= modules_list.objects.get(company=staff.company.id,status='New')
-  bank=BankModel.objects.filter(company=company_instance)
-  if SalesInvoice.objects.filter(company=company_instance).exists():
-        invoice_count = SalesInvoice.objects.last().id
-        next_count = invoice_count+1
-  else:
-        next_count=1
-
-  return render(request, 'company/add_salesinvoice.html',{'staff':staff,'Party':Party,'item':item,'bank':bank,'count':next_count,'allmodules':allmodules})
-
-def save_sales_invoice(request):
-
-    if request.method == 'POST':
-        
-        if 'staff_id' in request.session:
-            staff_id = request.session['staff_id']
-        else:
-            return redirect('/')
-
-        staff = staff_details.objects.get(id=staff_id)
-        company_instance = staff.company 
-        
-        party_name = request.POST.get('partyname')
-        contact = request.POST.get('contact')
-        address = request.POST.get('address')
-        invoice_no = request.POST.get('invoiceno')
-        date = request.POST.get('date')
-        state_of_supply = request.POST.get('state_of_supply')
-        paymenttype = request.POST.get('bank')
-        cheque = request.POST.get('chequeNumber')
-        upi = request.POST.get('upiNumber')
-        accountno = request.POST.get('accountNumber')
-        item = request.POST.getlist('item[]')
-        hsn = request.POST.getlist('hsn[]')
-        quantity = request.POST.getlist('quantity[]')
-        rate = request.POST.getlist('rate[]')
-        discount = request.POST.getlist('discount[]')
-        tax = request.POST.getlist('tax[]')
-        totalamount = request.POST.getlist('amount[]')
-        description = request.POST.get('description')
-        subtotal = request.POST.get('subtotal')
-        igst = request.POST.get('igst')
-        cgst = request.POST.get('cgst')
-        sgst = request.POST.get('sgst')
-        total_taxamount = request.POST.get('total_taxamount')
-        adjustment = request.POST.get('adjustment')
-        grandtotal = request.POST.get('grandtotal')
-        paidoff = request.POST.get('paidoff')
-        totalbalance = request.POST.get('totalbalance')
-
-        party_instance=party.objects.get(party_name=party_name)
-        
-      
-        sales_invoice = SalesInvoice(
-            staff=staff,
-            company=company_instance,
-            party=party_instance,
-            party_name=party_name,
-            contact=contact,
-            address=address,
-            invoice_no=invoice_no,
-            date=date,
-            state_of_supply=state_of_supply,
-            paymenttype=paymenttype,
-            cheque=cheque,
-            upi=upi,
-            accountno=accountno,
-            description=description,
-            subtotal=subtotal,
-            igst=igst,
-            cgst=cgst,
-            sgst=sgst,
-            total_taxamount=total_taxamount,
-            adjustment=adjustment,
-            grandtotal=grandtotal,
-            paidoff=paidoff,
-            totalbalance=totalbalance,
-        )
-    
-        sales_invoice.save()
-
-        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
-                                              staff=staff,      
-                                              salesinvoice=sales_invoice,
-                                              action="CREATED",
-                                              done_by_name=staff.first_name,
-                                              )
-        tr_history.save()
-
-        invoice = SalesInvoice.objects.get(id=sales_invoice.id)
-
-        if len(item)==len(hsn)==len(quantity)==len(rate)==len(discount)==len(tax)==len(totalamount):
-          mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
-          mapped=list(mapped)
-        for ele in mapped:
-          itm = ItemModel.objects.get(id=ele[0])
-          SalesInvoiceItem.objects.create(item = itm,hsn=ele[1], quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=invoice,company=company_instance)
-
-        
-
-        if 'save_and_new' in request.POST:
-            return render(request, 'staff/add_salesinvoice.html')
-        else:
-            return redirect('view_salesinvoice')
-
-    return render(request, 'company/add_salesinvoice.html')
-  
-def editsave_salesinvoice(request,id):
-
-    if request.method == 'POST':
-        
-        if 'staff_id' in request.session:
-            staff_id = request.session['staff_id']
-        else:
-            return redirect('/')
-
-        staff = staff_details.objects.get(id=staff_id)
-        company_instance = company.objects.get(id=staff.company.id)
-        sales_invoice=SalesInvoice.objects.get(id=id,company=company_instance,staff=staff)
-        
-        sales_invoice.party_name = request.POST.get('partyname')
-        sales_invoice.contact = request.POST.get('contact')
-        sales_invoice.address = request.POST.get('address')
-        sales_invoice.invoice_no = request.POST.get('invoiceno')
-        sales_invoice.date = request.POST.get('date')
-        sales_invoice.state_of_supply = request.POST.get('state_of_supply')
-        sales_invoice.paymenttype = request.POST.get('bank')
-        sales_invoice.cheque = request.POST.get('chequeNumber')
-        sales_invoice.upi = request.POST.get('upiNumber')
-        sales_invoice.accountno = request.POST.get('accountNumber')
-        sales_invoice.description = request.POST.get('description')
-        sales_invoice.subtotal = request.POST.get('subtotal')
-        sales_invoice.igst = request.POST.get('igst')
-        sales_invoice.cgst = request.POST.get('cgst')
-        sales_invoice.sgst = request.POST.get('sgst')
-        sales_invoice.total_taxamount = request.POST.get('total_taxamount')
-        sales_invoice.adjustment = request.POST.get('adjustment')
-        sales_invoice.grandtotal = request.POST.get('grandtotal')
-        sales_invoice.paidoff = request.POST.get('paidoff')
-        sales_invoice.totalbalance = request.POST.get('totalbalance')
-    
-        sales_invoice.save()
-
-        item = tuple(request.POST.getlist('item[]'))
-        hsn = tuple(request.POST.getlist('hsn[]'))
-        quantity = tuple(request.POST.getlist('quantity[]'))
-        rate = tuple(request.POST.getlist('rate[]'))
-        discount = tuple(request.POST.getlist('discount[]'))
-        tax = tuple(request.POST.getlist('tax[]'))
-        totalamount = tuple(request.POST.getlist('amount[]'))
-
-        SalesInvoiceItem.objects.filter(salesinvoice=sales_invoice,company=company_instance).delete()
-
-        if len(item) == len(hsn) == len(quantity) == len(rate) == len(discount) == len(tax) == len(totalamount):
-      
-            mapped=zip(item,hsn,quantity,rate,discount,tax,totalamount)
-            mapped=list(mapped)
-            for ele in mapped:
-              itm = ItemModel.objects.get(id=ele[0])
-              SalesInvoiceItem.objects.create( hsn=ele[1],quantity=ele[2],rate=ele[3],discount=ele[4],tax=ele[5],totalamount=ele[6],salesinvoice=sales_invoice,company=company_instance,item =itm,staff=staff)
-
-        tr_history = SalesInvoiceTransactionHistory(company=company_instance,
-                                              staff=staff,      
-                                              salesinvoice=sales_invoice,
-                                              action="UPDATED",
-                                              done_by_name=staff.first_name,
-                                              )
-        tr_history.save()
-
-        
-        return redirect('view_salesinvoice')
-
-    return render(request, 'company/edit_salesinvoice.html')
-  
-def itemdetailinvoice(request):
-  itmid = request.GET['id']
-  itm = ItemModel.objects.get(id=itmid)
-  hsn = itm.item_hsn
-  price = itm.item_sale_price
-  return JsonResponse({'hsn':hsn, 'price':price})
-
-
-def itemdata_salesinvoice(request):
-    if 'staff_id' in request.session:
-        if request.session.has_key('staff_id'):
-            staff_id = request.session['staff_id']
-    else:
-        return redirect('/')
-
-    selected_item_id = request.GET.get('id', None)
-
-    if selected_item_id:
-        staff = staff_details.objects.get(id=staff_id)
-        try:
-            item = ItemModel.objects.get(id=selected_item_id)
-            name = item.item_name
-            rate = item.item_sale_price
-            hsn = item.item_hsn
-            place = staff.company.state
-
-            return JsonResponse({"status": " not", 'place': place, 'rate': rate, 'hsn': hsn,'name':name})
-        except ItemModel.DoesNotExist:
-            return JsonResponse({'error': 'Item not found'}, status=404)
-    else:
-        return JsonResponse({'error': 'Item ID not provided'}, status=400)
-    
-
 def itemdata_salesinvoiceedit(request):
-    if 'staff_id' in request.session:
-        if request.session.has_key('staff_id'):
-            staff_id = request.session['staff_id']
-    else:
-        return redirect('/')
+  itmid = request.GET['id']
+  print(itmid)
+  itm = ItemModel.objects.get(id=itmid)
+  print(itm)
+  hsn = itm.item_hsn
+  gst = itm.item_gst
+  igst = itm.item_igst
+  price = itm.item_sale_price
+  qty = itm.item_current_stock
+  return JsonResponse({'hsn':hsn, 'gst':gst, 'igst':igst, 'price':price, 'qty':qty})
 
-    selected_item_id = request.GET.get('id', None)
-
-    if selected_item_id:
-        staff = staff_details.objects.get(id=staff_id)
-        try:
-            item = ItemModel.objects.get(id=selected_item_id)
-            name = item.item_name
-            rate = item.item_sale_price
-            hsn = item.item_hsn
-            place = staff.company.state
-
-            return JsonResponse({"status": " not", 'place': place, 'rate': rate, 'hsn': hsn})
-        except ItemModel.DoesNotExist:
-            return JsonResponse({'error': 'Item not found'}, status=404)
-    else:
-        return JsonResponse({'error': 'Item ID not provided'}, status=400)
