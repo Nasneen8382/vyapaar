@@ -121,8 +121,8 @@
                         <select style="color: black;  width: 21.5vw;" class="form-control  bg-light me-2  border-secondary" id="stateOfSupply"
                             name="state_of_supply"  >
                             <option value="{{sale.placeofsupply}}" selected hidden>{{sale.placeofsupply}}</option>
-                            <option value="state">State</option>
-                            <option value="other_state">Other State</option>
+                            <option value="State">State</option>
+                            <option value="Other state">Other State</option>
     
                         </select>
                     </div>
@@ -216,7 +216,7 @@
 
                                         <input type="text" id="intrataxval{{ forloop.counter }}" value="{{i.product.item_gst}}" hidden>
                                         <input type="text" id="intertaxval{{ forloop.counter }}" value="{{i.product.item_igst}}" hidden>
-                                        {% if sale.placeofsupply  == 'state'  %}
+                                        {% if sale.placeofsupply  == 'State'  %}
                                             <input type="text" name='tax[]' id="tax{{ forloop.counter }}" class="form-control border-secondary tax" style="color: black; background-color: white; width: 120px;" value="{{i.product.item_gst}}"  readonly />
                                         {% else %}
                                             <input type="text" name='tax[]' id="tax{{ forloop.counter }}" class="form-control border-secondary tax" style="color: black; background-color: white; width: 120px;" value="{{i.product.item_igst}}"  readonly />
@@ -294,7 +294,7 @@
                                 <div class="col-sm-4 m-0 p-0"></div>
                             </div>
                             {%endif%}
-                            {% if sale.placeofsupply  == 'Other_state' %}
+                            {% if sale.placeofsupply  == 'Other state' %}
                             <div class="row container-fluid p-2 m-0" style="display: none;" id="cgstdiv">
                                 <div class="col-sm-4 mt-2"><label for="a" class="text-center">CGST</label></div>
                                 <div class="col-sm-1 mt-2">:</div>
@@ -1144,6 +1144,7 @@ function productsearch(roinc){
                 data4 = response.gst
                 data5 = response.igst
                 var bc = document.getElementById("stateOfSupply").value;
+                console.log(bc);
                 if (bc == 'State') {
                     document.getElementById('intrataxval'+n).value = data4;
                     document.getElementById('intertaxval'+n).value = data5;
@@ -1152,7 +1153,7 @@ function productsearch(roinc){
                     document.getElementById('tax'+n).value = data4;
                     calc()
                 } 
-                if (bc == 'Other_state') {
+                if (bc == 'Other state') {
                     document.getElementById('intrataxval'+n).value = data4;
                     document.getElementById('intertaxval'+n).value = data5;
                     document.getElementById('hsn'+n).value = data;

@@ -192,7 +192,7 @@
 
                             </div>
                         </div>
-                        <div class="mt-3" id="content-div"  style="overflow-x: scroll;overflow-y: hidden;">
+                        <div class="mt-3" id="content-div"  style="overflow-x: scroll;overflow-y: hidden;min-height: 50vh;">
                             <table class="table table-bordered table-info table-striped fs-3 tb table-responsive w-100" id="myTable">
                                 <thead >
                             <!-- <table id="myTable"
@@ -414,6 +414,7 @@
                                     <th>BALANCE</th>
                                     <th>TYPE</th>
                                     <th>STATUS</th>
+                                    <th>ACTION</th>
                                 </thead>
                                 <tbody>
                                     {% for i in sale %}
@@ -427,6 +428,7 @@
                                         <td>{{i.balance}}</td>
                                         <td>sale order</td>
                                         <td>{{i.status}}</td>
+                                        <td>{{i.action}}</td>
                                     </tr>
                                         {% endfor %}
                                 </tbody>

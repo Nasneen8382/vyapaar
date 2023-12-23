@@ -49,8 +49,7 @@
                 margin-right: 600px;
                 color: white;
                 text-align: center;
-                padding-top: 10px;
-              ">
+                padding-top: 10px;">
                 </div>
                 <div class="col-md-4">
                     <h3>
@@ -64,9 +63,9 @@
                   text-align: center;
                   color: rgb(0, 0, 0);
                 ">
-                    <p>Debit No. <span style="font-weight: bold;">{{pdebt.pdebitid }}</span>
+                    <p>Order No. : <span style="font-weight: bold;">{{sale.orderno }}</span>
                         <br>
-                        Debit Date: <span style="font-weight: bold;">{{pdebt.debitdate|date:'d-m-Y' }}</span>
+                        Order Date : <span style="font-weight: bold;">{{sale.orderdate|date:'d-m-Y' }}</span>
                         <br>
                        
                     </p>
@@ -78,29 +77,29 @@
                     <tr style="font-weight: bolder">
                         <td></td>
                         <td></td>
-                        <td>Party</td>
+                        <td></td>
                     </tr>
                     <tr>
                         <td>
                             <h5 class="text-info" style="font-weight: bold; color: rgb(49, 49, 138);">
-                                {{pdebt.company.company_name}}</h5>
+                                {{sale.comp.company_name}}</h5>
                             <p class="address" style="font-weight: bold;color: #000;"> {{cmp.address}}<br>
-                                {{ pdebt.company.address }} <br>
-                                {{pdebt.company.city}},
-                                {{pdebt.company.state}}
-                                {{pdebt.company.pincode}} <br>
-                                {{ pdebt.company.user.email }} <br>
-                                {{ pdebt.company.contact }} 
+                                {{ sale.comp.address }} <br>
+                                {{sale.comp.city}},
+                                {{sale.comp.state}}
+                                {{sale.comp.pincode}} <br>
+                                {{ sale.comp.user.email }} <br>
+                                {{ sale.comp.contact }} 
                             </p>
                         </td>
                         <td></td>
                         <td>
-                            <h5 class="text-info" style="font-weight: bold;"><span style="color: #000;">Name:
-                                </span>{{pdebt.party.party_name}}</h5>
+                            <h5 class="text-info" style="font-weight: bold;"><span style="color: #000;">Party Name:
+                                </span>{{sale.party.party_name}}</h5>
                             <p class="address" style="font-weight: bold;color: #000;">
-                                <span>Address :</span>{{pdebt.party.address}}
+                                <span>Address :</span>{{sale.party.address}}
                                 <br>
-                                <span>Contact: </span>{{pdebt.party.contact}}
+                                <span>Contact: </span>{{sale.party.contact}}
                                 <br>
                                 
                            
@@ -125,17 +124,14 @@
                     </thead>
                     <tbody>
                       
-                        {% for itm in pitm %}
+                        {% for itm in saleitem %}
                                                                     <tr>
                                                                         <td class="text-center" style="color: black;">{{ itm.product.item_name}}</td>
-                                                                        <td class="text-center" style="color: black;">{{itm.product.item_hsn}}</td>
+                                                                        <td class="text-center" style="color: black;">{{itm.hsn}}</td>
                                                                         <td class="text-center" style="color: black;">{{ itm.qty }}</td>
-                                                                        <td class="text-center" style="color:black">{{ itm.product.item_purchase_price  }}</td>
-                                                                        {% if pdebt.supply == 'State' %}
-                                                                        <td class="text-center" style="color: black;">{{ itm.product.item_gst  }}</td>
-                                                                        {% else %}
-                                                                        <td class="text-center" style="color: black;">{{ itm.product.item_igst  }}</td>
-                                                                        {% endif %}
+                                                                        <td class="text-center" style="color:black">{{ itm.price  }}</td>
+                                                                        <td class="text-center" style="color: black;">{{ itm.tax  }}</td>
+                                                                        
                                                                         <td class="text-center" style="color:black">{{ itm.discount  }}</td>
                                                                         <td class="text-center" style="color:black">{{ itm.total }}</td>
                                                                     </tr>
@@ -154,46 +150,46 @@
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">Sub Total :</span>
                                 </th>
-                                <td class="text-right" style="color: #000;">{{pdebt.subtotal}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.subtotal}}</td>
                             </tr>
                             
-                            {% if pdebt.supply != 'State' %}
+                            {% if sale.placeofsupply != 'State' %}
                             <tr >
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">IGST:</span>
                                 </th>
-                                <td class="text-right" style="color: #000;">{{pdebt.igst}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.IGST}}</td>
                             </tr>
                             {% else %}
                             <tr>
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">CGST:</span>
                                 </th>
-                                <td class="text-right" style="color: #000;">{{pdebt.cgst}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.CGST}}</td>
                                 
                             </tr>
                             <tr>
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">SGST:</span>
                                 </th>
-                                <td class="text-right" style="color: #000;">{{pdebt.sgst}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.SGST}}</td>
                             </tr>
                             {% endif %}
                             <tr >
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">Tax Amount:</span>
                                 </th>
-                                <td class="text-right" style="color: #000;">{{pdebt.taxamount}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.taxamount}}</td>
                             </tr>
 
-                            {% if pdebt.adjustment != None and pdebt.adjustment != 0.0 %}
+                            {% if sale.adjustment != None and sale.adjustment != 0.0 %}
                            
                             <tr >
                                 <th colspan="5">
                                     <span style="float: right; margin-right: 10px">Adjustment:</span>
                                 </th>
 
-                                <td class="text-right" style="color: #000;">{{pdebt.adjustment}}</td>
+                                <td class="text-right" style="color: #000;">{{sale.adjustment}}</td>
                             </tr>
                             {% endif %}
                           
@@ -204,7 +200,7 @@
                                         <span style="float: right; margin-right: 14px">Grand Total:</span>
                                     </th>
                                     <td style="color: black; font-weight: bold">
-                                        {{pdebt.grandtotal}}
+                                        {{sale.grandtotal}}
                                     </td>
                                 </tr>
                             </tfoot>

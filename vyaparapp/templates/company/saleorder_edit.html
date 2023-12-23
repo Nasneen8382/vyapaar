@@ -1475,9 +1475,12 @@
                     else if (document.getElementById('stateofsply').value == 'Other state') {
                         document.getElementById('select_tax' + n).value = dataigst;
                     }
-
+                    
                 },
             });
+            
+        
+    
 
             // $(document).on('input', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc', function () {
             //     calc();
@@ -1544,28 +1547,34 @@
 
 
         $(document).ready(function () {
-            $(document).on('input', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc, #tab_logic tbody tr .seltax', function () {
-                var row = $(this).closest('tr');
-                var qty = row.find('.qty').val();
-                var price = row.find('.price').val();
-                var dis = row.find('.disc').val();
-                var taxlabel = row.find('.seltax').val();
-                var tax = extractTaxRate(taxlabel);
+    // Bind input event for qty, price, disc, and seltax fields
+    $(document).on('input', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc, #tab_logic tbody tr .seltax', function () {
+        var row = $(this).closest('tr');
+        performCalculations(row);
+    });
 
-                console.log(qty);
-                console.log(price);
-                console.log("====================");
-                console.log(tax);
-                row.find('.total').val((parseFloat(qty) * parseFloat(price)) - parseFloat(dis));
-                row.find('.taxamount').val(((qty * price) - dis) * (tax / 100));
-                // Your calculations here
-                calc_total();
-            });
+    // Bind change event for product dropdown
+   
 
-            // ... (similarly for other input fields)
+    function performCalculations(row) {
+        var qty = row.find('.qty').val();
+        var price = row.find('.price').val();
+        var dis = row.find('.disc').val();
+        var taxlabel = row.find('.seltax').val();
+        var tax = extractTaxRate(taxlabel);
 
+        console.log(qty);
+        console.log(price);
+        console.log("====================");
+        console.log(tax);
+        
+        row.find('.total').val((parseFloat(qty) * parseFloat(price)) - parseFloat(dis));
+        row.find('.taxamount').val(((qty * price) - dis) * (tax / 100));
+        // Your calculations here
+        calc_total();
+    }
+});
 
-        });
         function extractTaxRate(label) {
             var match = label.match(/\[(\d+)%\]/);
             if (match && match[1]) {

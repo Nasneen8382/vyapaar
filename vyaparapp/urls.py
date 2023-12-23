@@ -22,7 +22,7 @@ urlpatterns = [
     path('sale_return_cr', views.sale_return_cr, name='sale_return_cr'),
 
     # created by athul
-    path('settings', views.settings, name='settings'),
+    # path('settings', views.settings, name='settings'),
     path('hide_options', views.hide_options, name='hide_options'),
 
     path('staffhome', views.staffhome, name='staffhome'),

@@ -22,6 +22,7 @@ from xhtml2pdf import pisa
 
 import pandas as pd
 
+from django.conf import settings
 from io import BytesIO
 from django.core.mail import send_mail, EmailMessage
 
@@ -128,16 +129,16 @@ def sale_return_cr(request):
 
 
 # created by athul
-def settings(request):
-  com =  company.objects.get(user = request.user)
-  selected_options = request.session.get('selected_options', None)
+# def settings(request):
+#   com =  company.objects.get(user = request.user)
+#   selected_options = request.session.get('selected_options', None)
   
-  context = {
-              'company' : com,
-              'selected_options': json.dumps(selected_options),
+#   context = {
+#               'company' : com,
+#               'selected_options': json.dumps(selected_options),
               
-          }
-  return render(request, 'company/settings.html',context)
+#           }
+#   return render(request, 'company/settings.html',context)
 
 def hide_options(request):
     
@@ -5326,37 +5327,33 @@ def saleorder_convert(request, sid):
 
 def email_saleorder(request,id):
   if request.method == 'POST':
-                emails_string = request.POST['email_ids']
-
+    print("ggggggggggggggggggggg")
+    emails_string = request.POST['email_ids']
                 # Split the string by commas and remove any leading or trailing whitespace
-                emails_list = [email.strip() for email in emails_string.split(',')]
-                email_message = request.POST['email_message']
-                print(emails_list)
+    emails_list = [email.strip() for email in emails_string.split(',')]
+    email_message = request.POST['email_message']
+    print(emails_list)
 
-                sid = request.session.get('staff_id')
-                staff =  staff_details.objects.get(id=sid)
-                cmp = company.objects.get(id=staff.company.id) 
-                
-                sale = salesorder.objects.get(id=id,staff=staff)
-                saleitem= sales_item.objects.filter(sale_order=sale.id)
-               
-                        
-                context = {'sale':sale, 'cmp':cmp,'saleitem':saleitem}
-                template_path = 'company/saleorder_file_mail.html'
-                template = get_template(template_path)
-
-                html  = template.render(context)
-                result = BytesIO()
-                pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
-                pdf = result.getvalue()
-                filename = f'DEBIT NOTE - {pdebt.pdebitid}.pdf'
-                subject = f"DEBIT NOTE - {pdebt.pdebitid}"
-                email = EmailMessage(subject, f"Hi,\nPlease find the attached DEBIT NOTE - File-{pdebt.pdebitid}. \n{email_message}\n\n--\nRegards,\n{cmp.company_name}\n{cmp.address}\n{cmp.state} - {cmp.country}\n{cmp.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
-                email.attach(filename, pdf, "application/pdf")
-                email.send(fail_silently=False)
-
-                msg = messages.success(request, 'Debit note file has been shared via email successfully..!')
-                return redirect(details_debitnote,id)
+    sid = request.session.get('staff_id')
+    staff =  staff_details.objects.get(id=sid)
+    cmp = company.objects.get(id=staff.company.id) 
+    sale = salesorder.objects.get(id=id,staff=staff)
+    saleitem= sales_item.objects.filter(sale_order=sale.id)
+    context = {'sale':sale, 'cmp':cmp,'saleitem':saleitem}
+    template_path = 'company/saleorder_file_mail.html'
+    
+    template = get_template(template_path)
+    html  = template.render(context)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    pdf = result.getvalue()
+    filename = f'SALE ORDER - {sale.orderno}.pdf'
+    subject = f"SALE ORDER - {sale.orderno}"
+    email = EmailMessage(subject, f"Hi,\nPlease find the attached SALE ORDER - File-{sale.orderno}. \n{email_message}\n\n--\nRegards,\n{cmp.company_name}\n{cmp.address}\n{cmp.state} - {cmp.country}\n{cmp.contact}", from_email=settings.EMAIL_HOST_USER, to=emails_list)
+    email.attach(filename, pdf, "application/pdf")
+    email.send(fail_silently=False)
+    # msg = messages.success(request, 'Debit note file has been shared via email successfully..!')
+    return redirect(saleorder_view,id)
   
 
 
