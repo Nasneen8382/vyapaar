@@ -570,6 +570,7 @@
 
             } else {
                 row.style.display = "none";
+                console.log("skip");
                 
 
             }
@@ -589,7 +590,7 @@
             return toDate
         })
         var startDate = new Date(document.getElementById("in1").value);
-        var startDate = new Date(fromDate);
+        // var startDate = new Date(fromDate);
         var endDate = new Date(document.getElementById("in2").value);
         endDate.setHours(23, 59, 59, 999);
         var rows = table.getElementsByTagName("tr");
@@ -598,11 +599,11 @@
             var row = rows[i];
             var dateCell = row.cells[3];
             var rowDate = new Date(dateCell.textContent);
-            rowDate.setHours(0, 0, 0, 0);
+            rowDate.setHours(23, 59, 59, 999);
             console.log('end'+endDate);
             console.log('row'+rowDate);
 
-            if (rowDate <= endDate) {
+            if (rowDate <= endDate && rowDate >= startDate) {
                 row.style.display = "";
 
             } else {

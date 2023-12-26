@@ -413,8 +413,7 @@
                                                                         <select name='product[]' id="product1"
                                                                             style="margin-right: 0.5em;"
                                                                             class="form-control product border-secondary">
-                                                                            <option value="" selected hidden>Select
-                                                                                Product</option>
+                                                                            <option value="" selected hidden>Select Product</option>
 
                                                                             {% for i in item %}
                                                                             <option value="{{i.id}}">{{i.item_name}}
@@ -457,10 +456,15 @@
 
                                                                 <td>
                                                                     <input hidden id="cmpstate">
-                                                                    <input type="text" id="select_tax1" name="tax1[]"
+                                                                    <input type="text" id="select_gst1" name="taxgst1[]"
                                                                         style="background-color: white;color: black;padding:8px 3px;"
                                                                         placeholder="Tax Rate"
                                                                         class="form-control seltax d-flex border-secondary"
+                                                                        style="width: 8vw;">
+                                                                    <input type="text" id="select_igst1" name="taxigst1[]"
+                                                                        style="background-color: white;color: black;padding:8px 3px;"
+                                                                        placeholder="Tax Rate"
+                                                                        class="form-control seltax d-none border-secondary"
                                                                         style="width: 8vw;">
 
 
@@ -1506,7 +1510,8 @@
                         <td><input type="number" name='price[]' id="unit${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder='Price' class="form-control border-secondary price" step="0.00" min="0"  /></td>
                         
                         <td>
-                          <input type="text"name='tax1[]'   id="select_tax${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-flex"  style="width: 8vw;">
+                            <input type="text"name='taxgst1[]'   id="select_gst${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-flex"  style="width: 8vw;">
+                            <input type="text"name='taxigst1[]'   id="select_igst${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-none"  style="width: 8vw;">
     
                           
                           
@@ -1599,6 +1604,33 @@
             calc_total();
 
         });
+        $(document).on('change', '#stateofsply', function () {
+    // Get the selected value of stateofsply
+    var stateValue = $(this).val();
+
+    // Loop through each product row
+    $('.product').each(function () {
+        var n = $(this).attr("id").slice(7);
+
+        // Get references to the elements
+        var selectGst = document.getElementById('select_gst' + n);
+        var selectIgst = document.getElementById('select_igst' + n);
+
+        // Check the state value and update visibility accordingly
+        if (stateValue == 'State') {
+            selectGst.style.display = 'flex';
+            selectIgst.style.display = 'none';
+        } else if (stateValue == 'Other state') {
+            selectGst.style.display = 'none';
+            selectIgst.style.display = 'flex';
+        } else {
+            alert('Please select a stateofsply before choosing a product.');
+            // Optionally, you can reset the product selection
+            $(this).val('');
+        }
+    });
+});
+
 
         $(document).on('change', '.product', function () {
 
@@ -1620,18 +1652,22 @@
                     datagst = response.gst
                     dataigst = response.igst
 
-
-
+                    document.getElementById('select_gst' + n).value = datagst;
+                        document.getElementById('select_igst' + n).value = dataigst;
+                        document.getElementById('hsn' + n).value = data;
+                        document.getElementById('unit' + n).value = dataprice;
+                        
                     // document.getElementById('select_tax'+n).value = datagst;
                     if (document.getElementById('stateofsply').value == 'State') {
-                        document.getElementById('select_tax' + n).value = datagst;
-                        document.getElementById('hsn' + n).value = data;
-                        document.getElementById('unit' + n).value = dataprice;
+                        
+                        document.getElementById('select_gst' + n).style.display = 'flex';
+                        document.getElementById('select_igst' + n).style.display = 'none';
+
                     }
                     else if (document.getElementById('stateofsply').value == 'Other state') {
-                        document.getElementById('select_tax' + n).value = dataigst;
-                        document.getElementById('hsn' + n).value = data;
-                        document.getElementById('unit' + n).value = dataprice;
+                        
+                        document.getElementById('select_gst' + n).style.display = 'none';
+                        document.getElementById('select_igst' + n).style.display = 'flex';
                     }
                     else {
 
