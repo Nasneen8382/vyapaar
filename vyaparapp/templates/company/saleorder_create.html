@@ -321,63 +321,7 @@
 
                                     <script>
                                         $(document).ready(function () {
-                                            $('#paymethode').change(function () {
-
-                                                $('#upi').hide();
-                                                $('#check').hide();
-                                                $('#account').hide();
-                                                $('#account').hide();
-                                                // Show the selected div based on the selected option
-                                                var selectedOption = $(this).val();
-                                                if (selectedOption === 'Cheque') {
-                                                    $('#check').show();
-                                                    $('#upi').hide();
-                                                    $('#account').hide();
-                                                    $('#checkno').prop('required', true);
-                                                    $('#upiid').prop('required', false);
-                                                }
-                                                if (selectedOption === 'UPI') {
-                                                    $('#upi').show();
-                                                    $('#check').hide();
-                                                    $('#account').hide();
-                                                    $('#upiid').prop('required', true);
-                                                    $('#checkno').prop('required', false);
-                                                }
-                                                if (selectedOption != 'UPI' && selectedOption != 'Cheque' && selectedOption != 'Cash') {
-                                                    $('#account').show();
-                                                    $('#upi').hide();
-                                                    $('#check').hide();
-                                                    $.ajax({
-                                                        type: "GET",
-                                                        url: "{% url 'getacc' %}",
-                                                        data: {
-                                                            id: selectedOption
-                                                        },
-                                                        success: function (response) {
-                                                            console.log(response)
-                                                            $('#accno').val(response.acc);
-
-                                                        }
-                                                    });
-                                                }
-
-                                            });
-                                            $('#stateofsply').change(function () {
-
-
-                                                var selectedOption = $(this).val();
-                                                if (selectedOption === 'Other state') {
-                                                    $('#igst1').show();
-                                                    $('#cgst1').hide();
-                                                    $('#sgst1').hide();
-                                                }
-                                                else if (selectedOption === 'State') {
-                                                    $('#igst1').hide();
-                                                    $('#cgst1').show();
-                                                    $('#sgst1').show();
-                                                }
-
-                                            });
+                                           
                                         });
                                     </script>
 
@@ -456,15 +400,12 @@
 
                                                                 <td>
                                                                     <input hidden id="cmpstate">
-                                                                    <input type="text" id="select_gst1" name="taxgst1[]"
+                                                                    <input type="text" id="intrataxval1" hidden>
+                                                                    <input type="text" id="intertaxval1" hidden>
+                                                                    <input type="text" id="select_tax1" name="tax1[]"
                                                                         style="background-color: white;color: black;padding:8px 3px;"
                                                                         placeholder="Tax Rate"
                                                                         class="form-control seltax d-flex border-secondary"
-                                                                        style="width: 8vw;">
-                                                                    <input type="text" id="select_igst1" name="taxigst1[]"
-                                                                        style="background-color: white;color: black;padding:8px 3px;"
-                                                                        placeholder="Tax Rate"
-                                                                        class="form-control seltax d-none border-secondary"
                                                                         style="width: 8vw;">
 
 
@@ -484,6 +425,7 @@
                                                                 <td style="display: none;"><input type="number"
                                                                         step="any" name='taxamount[]' id="taxamount1"
                                                                         class="form-control taxamount border-secondary" />
+                                                                        
                                                                 </td>
                                                                 </td>
                                                                 <td class="d-flex">
@@ -569,9 +511,9 @@
                                                             <div class="col-sm-4 mt-2"><label for="a"
                                                                     class="text-center">Tax Amount</label></div>
                                                             <div class="col-sm-1 mt-2">:</div>
-                                                            <div class="col-sm-7 mt-2"><input type="number" step="any"
+                                                            <div class="col-sm-7 mt-2 "><input type="number" step="any"
                                                                     name='taxamount' id="tax_amount" placeholder='0.00'
-                                                                    class="form-control border-secondary" />
+                                                                    class="form-control border-secondary " />
                                                             </div>
                                                             <div class="col-sm-4 m-0 p-0"></div>
 
@@ -1510,8 +1452,9 @@
                         <td><input type="number" name='price[]' id="unit${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder='Price' class="form-control border-secondary price" step="0.00" min="0"  /></td>
                         
                         <td>
-                            <input type="text"name='taxgst1[]'   id="select_gst${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-flex"  style="width: 8vw;">
-                            <input type="text"name='taxigst1[]'   id="select_igst${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-none"  style="width: 8vw;">
+                            <input type="text" id="intrataxval${roinc}" hidden>
+                            <input type="text" id="intertaxval${roinc}" hidden>
+                          <input type="text"name='tax1[]'   id="select_tax${roinc}"  style="background-color: white;color: black;padding:8px 3px;" placeholder="Tax Rate" class="form-control border-secondary seltax d-flex"  style="width: 8vw;">
     
                           
                           
@@ -1604,33 +1547,6 @@
             calc_total();
 
         });
-        $(document).on('change', '#stateofsply', function () {
-    // Get the selected value of stateofsply
-    var stateValue = $(this).val();
-
-    // Loop through each product row
-    $('.product').each(function () {
-        var n = $(this).attr("id").slice(7);
-
-        // Get references to the elements
-        var selectGst = document.getElementById('select_gst' + n);
-        var selectIgst = document.getElementById('select_igst' + n);
-
-        // Check the state value and update visibility accordingly
-        if (stateValue == 'State') {
-            selectGst.style.display = 'flex';
-            selectIgst.style.display = 'none';
-        } else if (stateValue == 'Other state') {
-            selectGst.style.display = 'none';
-            selectIgst.style.display = 'flex';
-        } else {
-            alert('Please select a stateofsply before choosing a product.');
-            // Optionally, you can reset the product selection
-            $(this).val('');
-        }
-    });
-});
-
 
         $(document).on('change', '.product', function () {
 
@@ -1652,27 +1568,32 @@
                     datagst = response.gst
                     dataigst = response.igst
 
-                    document.getElementById('select_gst' + n).value = datagst;
-                        document.getElementById('select_igst' + n).value = dataigst;
-                        document.getElementById('hsn' + n).value = data;
-                        document.getElementById('unit' + n).value = dataprice;
-                        
+
+
                     // document.getElementById('select_tax'+n).value = datagst;
                     if (document.getElementById('stateofsply').value == 'State') {
-                        
-                        document.getElementById('select_gst' + n).style.display = 'flex';
-                        document.getElementById('select_igst' + n).style.display = 'none';
+                        document.getElementById('select_tax' + n).value = datagst;
+                        document.getElementById('hsn' + n).value = data;
+                        document.getElementById('unit' + n).value = dataprice;
 
+                        document.getElementById('intrataxval'+n).value = datagst;
+                        document.getElementById('intertaxval'+n).value = dataigst;
                     }
                     else if (document.getElementById('stateofsply').value == 'Other state') {
-                        
-                        document.getElementById('select_gst' + n).style.display = 'none';
-                        document.getElementById('select_igst' + n).style.display = 'flex';
+                        document.getElementById('select_tax' + n).value = dataigst;
+                        document.getElementById('hsn' + n).value = data;
+                        document.getElementById('unit' + n).value = dataprice;
+
+                        document.getElementById('intrataxval'+n).value = datagst;
+                        document.getElementById('intertaxval'+n).value = dataigst;
+
                     }
                     else {
 
                         alert('Please select a stateofsply before choosing a product.');
-                        $(this).val('');
+                        var $select = $(document.getElementById('product'+n));
+                        var selectize = $select[0].selectize;
+                        selectize.setValue("");
                     }
 
                 },
@@ -1687,31 +1608,111 @@
 
         //        
         // }
-
+        
 
         $(document).ready(function () {
-            $(document).on('input', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc, #tab_logic tbody tr .seltax', function () {
-                var row = $(this).closest('tr');
-                var qty = row.find('.qty').val();
-                var price = row.find('.price').val();
-                var dis = row.find('.disc').val();
-                var taxlabel = row.find('.seltax').val();
-                var tax = extractTaxRate(taxlabel);
+  
+            
+            function performCalculations(row) {
+                    var qty = row.find('.qty').val();
+                    var price = row.find('.price').val();
+                    var dis = row.find('.disc').val();
+                    var taxlabel = row.find('.seltax').val();
+                    var tax = extractTaxRate(taxlabel);
 
-                console.log(qty);
-                console.log(price);
-                console.log("====================");
-                console.log(tax);
-                row.find('.total').val((parseFloat(qty) * parseFloat(price)) - parseFloat(dis));
-                row.find('.taxamount').val(((qty * price) - dis) * (tax / 100));
-                // Your calculations here
-                calc_total();
+                    console.log(qty);
+                    console.log(price);
+                    console.log("====================");
+                    console.log(tax);
+                    
+                    row.find('.total').val((parseFloat(qty) * parseFloat(price)) - parseFloat(dis));
+                    row.find('.taxamount').val(((qty * price) - dis) * (tax / 100));
+
+                    // Your additional calculations here
+                    calc_total();
+                }
+
+                // Event handler for input change on qty, price, disc, and seltax
+                $(document).on('input change keyup', '#tab_logic tbody tr .qty, #tab_logic tbody tr .price, #tab_logic tbody tr .disc, #tab_logic tbody tr .seltax', function () {
+                    var row = $(this).closest('tr');
+                    performCalculations(row);
+                });
+        //     
+
+                $('#paymethode').change(function () {
+
+                $('#upi').hide();
+                $('#check').hide();
+                $('#account').hide();
+                $('#account').hide();
+                // Show the selected div based on the selected option
+                var selectedOption = $(this).val();
+                if (selectedOption === 'Cheque') {
+                    $('#check').show();
+                    $('#upi').hide();
+                    $('#account').hide();
+                    $('#checkno').prop('required', true);
+                    $('#upiid').prop('required', false);
+                }
+                if (selectedOption === 'UPI') {
+                    $('#upi').show();
+                    $('#check').hide();
+                    $('#account').hide();
+                    $('#upiid').prop('required', true);
+                    $('#checkno').prop('required', false);
+                }
+                if (selectedOption != 'UPI' && selectedOption != 'Cheque' && selectedOption != 'Cash') {
+                    $('#account').show();
+                    $('#upi').hide();
+                    $('#check').hide();
+                    $.ajax({
+                        type: "GET",
+                        url: "{% url 'getacc' %}",
+                        data: {
+                            id: selectedOption
+                        },
+                        success: function (response) {
+                            console.log(response)
+                            $('#accno').val(response.acc);
+
+                        }
+                    });
+                }
+
+                });
+                $('#stateofsply').change(function () {
+                var table = document.getElementById("items-table-body");
+                var numberOfRows = table.rows.length;
+                var selectedOption = $(this).val();
+                if (selectedOption === 'Other state') {
+                    $('#igst1').show();
+                    $('#cgst1').hide();
+                    $('#sgst1').hide();
+                    for (var l = 1; l <= numberOfRows; l++){
+                        val = document.getElementById('intertaxval'+l).value;
+                        document.getElementById('select_tax'+l).value = val
+                    }
+                }
+                else if (selectedOption === 'State') {
+                    $('#igst1').hide();
+                    $('#cgst1').show();
+                    $('#sgst1').show();
+                    for (var l = 1; l <= numberOfRows; l++){
+                        val = document.getElementById('intrataxval'+l).value;
+                        document.getElementById('select_tax'+l).value = val
+                    }
+                }
+                $('#tab_logic tbody tr').each(function () {
+                    performCalculations($(this));
+                 });
+                // calc_total()
             });
 
             // ... (similarly for other input fields)
 
 
         });
+       
         function extractTaxRate(label) {
             var match = label.match(/\[(\d+)%\]/);
             if (match && match[1]) {
@@ -1720,6 +1721,9 @@
                 return 0;
             }
         }
+
+
+       
 
         function calc_total() {
 
